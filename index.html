@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Racing Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+
+        body {
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #gameContainer {
+            position: relative;
+            max-width: 100vw;
+            max-height: 100vh;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: #2a5a2a;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        #leaderboard {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+            min-width: 120px;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .control-btn:active {
+            background: rgba(255,255,255,0.4);
+            transform: scale(0.95);
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 20;
+        }
+
+        #startBtn {
+            padding: 15px 30px;
+            font-size: 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .steering-wheel {
+            width: 80px;
+            height: 80px;
+            border: 4px solid #fff;
+            border-radius: 50%;
+            position: relative;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .steering-indicator {
+            width: 4px;
+            height: 30px;
+            background: #fff;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div>Lap: <span id="lapCount">1/3</span></div>
+            <div>Speed: <span id="speedometer">0</span> mph</div>
+            <div>Time: <span id="timer">0:00</span></div>
+        </div>
+
+        <div id="leaderboard">
+            <div style="font-weight: bold; margin-bottom: 5px;">Positions</div>
+            <div id="positions"></div>
+        </div>
+
+        <div id="controls">
+            <div class="control-btn" id="leftBtn">⬅</div>
+            <div class="steering-wheel" id="steeringWheel">
+                <div class="steering-indicator"></div>
+            </div>
+            <div class="control-btn" id="rightBtn">➡</div>
+            <div class="control-btn" id="gasBtn">⬆</div>
+            <div class="control-btn" id="brakeBtn">⬇</div>
+        </div>
+
+        <div id="startScreen">
+            <h1>🏎️ Racing Game</h1>
+            <p>Race against 7 AI opponents!</p>
+            <p>Stay on track for best speed</p>
+            <button id="startBtn">START RACE</button>
+        </div>
+    </div>
+
+    <script>
+        class RacingGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.setupCanvas();
+                
+                this.gameState = 'menu'; // menu, racing, finished
+                this.frameCount = 0;
+                this.startTime = 0;
+                
+                this.cars = [];
+                this.track = this.generateTrack();
+                
+                this.input = {
+                    left: false,
+                    right: false,
+                    gas: false,
+                    brake: false
+                };
+                
+                this.setupControls();
+                this.setupCars();
+                this.gameLoop();
+            }
+            
+            setupCanvas() {
+                const container = document.getElementById('gameContainer');
+                const maxWidth = Math.min(window.innerWidth, 800);
+                const maxHeight = Math.min(window.innerHeight, 600);
+                
+                this.canvas.width = maxWidth;
+                this.canvas.height = maxHeight;
+                
+                container.style.width = maxWidth + 'px';
+                container.style.height = maxHeight + 'px';
+            }
+            
+            generateTrack() {
+                const centerX = this.canvas.width / 2;
+                const centerY = this.canvas.height / 2;
+                const radiusOuter = Math.min(centerX, centerY) - 50;
+                const radiusInner = radiusOuter - 80;
+                
+                return {
+                    centerX,
+                    centerY,
+                    radiusOuter,
+                    radiusInner,
+                    checkpoints: this.generateCheckpoints(centerX, centerY, (radiusOuter + radiusInner) / 2)
+                };
+            }
+            
+            generateCheckpoints(centerX, centerY, radius) {
+                const checkpoints = [];
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    checkpoints.push({
+                        x: centerX + Math.cos(angle) * radius,
+                        y: centerY + Math.sin(angle) * radius,
+                        angle: angle
+                    });
+                }
+                return checkpoints;
+            }
+            
+            setupCars() {
+                const colors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff', '#ffa544', '#a544ff'];
+                const startRadius = (this.track.radiusOuter + this.track.radiusInner) / 2;
+                
+                for (let i = 0; i < 8; i++) {
+                    const startAngle = -Math.PI / 2 + (i * 0.1);
+                    const car = {
+                        id: i,
+                        x: this.track.centerX + Math.cos(startAngle) * startRadius,
+                        y: this.track.centerY + Math.sin(startAngle) * startRadius,
+                        vx: 0,
+                        vy: 0,
+                        angle: startAngle + Math.PI / 2,
+                        speed: 0,
+                        maxSpeed: i === 0 ? 5 : 4 + Math.random(),
+                        acceleration: 0.3,
+                        friction: 0.95,
+                        turnSpeed: 0.05,
+                        color: colors[i],
+                        isPlayer: i === 0,
+                        lap: 1,
+                        checkpointIndex: 0,
+                        position: i + 1,
+                        onTrack: true,
+                        aiTarget: 0
+                    };
+                    this.cars.push(car);
+                }
+            }
+            
+            setupControls() {
+                const leftBtn = document.getElementById('leftBtn');
+                const rightBtn = document.getElementById('rightBtn');
+                const gasBtn = document.getElementById('gasBtn');
+                const brakeBtn = document.getElementById('brakeBtn');
+                const startBtn = document.getElementById('startBtn');
+                
+                // Touch controls
+                const addTouchControls = (element, key) => {
+                    element.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        this.input[key] = true;
+                    });
+                    element.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        this.input[key] = false;
+                    });
+                };
+                
+                addTouchControls(leftBtn, 'left');
+                addTouchControls(rightBtn, 'right');
+                addTouchControls(gasBtn, 'gas');
+                addTouchControls(brakeBtn, 'brake');
+                
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case 'ArrowLeft': this.input.left = true; break;
+                        case 'ArrowRight': this.input.right = true; break;
+                        case 'ArrowUp': this.input.gas = true; break;
+                        case 'ArrowDown': this.input.brake = true; break;
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    switch(e.key) {
+                        case 'ArrowLeft': this.input.left = false; break;
+                        case 'ArrowRight': this.input.right = false; break;
+                        case 'ArrowUp': this.input.gas = false; break;
+                        case 'ArrowDown': this.input.brake = false; break;
+                    }
+                });
+                
+                startBtn.addEventListener('click', () => {
+                    this.startRace();
+                });
+            }
+            
+            startRace() {
+                this.gameState = 'racing';
+                this.startTime = Date.now();
+                document.getElementById('startScreen').style.display = 'none';
+            }
+            
+            updateCar(car) {
+                if (car.isPlayer) {
+                    this.updatePlayerCar(car);
+                } else {
+                    this.updateAICar(car);
+                }
+                
+                // Physics
+                car.x += car.vx;
+                car.y += car.vy;
+                
+                // Check if on track
+                const distFromCenter = Math.sqrt(
+                    Math.pow(car.x - this.track.centerX, 2) + 
+                    Math.pow(car.y - this.track.centerY, 2)
+                );
+                
+                car.onTrack = distFromCenter <= this.track.radiusOuter && distFromCenter >= this.track.radiusInner;
+                
+                // Off-track penalty
+                if (!car.onTrack) {
+                    car.vx *= 0.8;
+                    car.vy *= 0.8;
+                    car.maxSpeed = car.isPlayer ? 3 : 2;
+                } else {
+                    car.maxSpeed = car.isPlayer ? 5 : 4 + Math.random();
+                }
+                
+                // Update checkpoint progress
+                this.updateCheckpoints(car);
+                
+                // Update UI for player
+                if (car.isPlayer) {
+                    document.getElementById('speedometer').textContent = Math.round(car.speed * 20);
+                    document.getElementById('lapCount').textContent = `${car.lap}/3`;
+                }
+            }
+            
+            updatePlayerCar(car) {
+                // Turning
+                if (this.input.left) car.angle -= car.turnSpeed;
+                if (this.input.right) car.angle += car.turnSpeed;
+                
+                // Acceleration
+                if (this.input.gas) {
+                    car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
+                } else if (this.input.brake) {
+                    car.speed = Math.max(car.speed - car.acceleration * 2, -car.maxSpeed / 2);
+                } else {
+                    car.speed *= car.friction;
+                }
+                
+                // Update velocity
+                car.vx = Math.cos(car.angle) * car.speed;
+                car.vy = Math.sin(car.angle) * car.speed;
+            }
+            
+            updateAICar(car) {
+                // Simple AI: follow the track
+                const targetCheckpoint = this.track.checkpoints[car.aiTarget];
+                const dx = targetCheckpoint.x - car.x;
+                const dy = targetCheckpoint.y - car.y;
+                const targetAngle = Math.atan2(dy, dx);
+                
+                // Check if reached target checkpoint
+                if (Math.sqrt(dx * dx + dy * dy) < 40) {
+                    car.aiTarget = (car.aiTarget + 1) % this.track.checkpoints.length;
+                }
+                
+                // Steer towards target
+                let angleDiff = targetAngle - car.angle;
+                while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+                while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+                
+                if (Math.abs(angleDiff) > 0.1) {
+                    car.angle += Math.sign(angleDiff) * car.turnSpeed;
+                }
+                
+                // AI always accelerates (simple AI)
+                car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
+                
+                // Update velocity
+                car.vx = Math.cos(car.angle) * car.speed;
+                car.vy = Math.sin(car.angle) * car.speed;
+            }
+            
+            updateCheckpoints(car) {
+                const checkpoint = this.track.checkpoints[car.checkpointIndex];
+                const dx = car.x - checkpoint.x;
+                const dy = car.y - checkpoint.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 30) {
+                    car.checkpointIndex++;
+                    if (car.checkpointIndex >= this.track.checkpoints.length) {
+                        car.checkpointIndex = 0;
+                        car.lap++;
+                    }
+                }
+            }
+            
+            updatePositions() {
+                // Sort cars by lap and checkpoint progress
+                this.cars.sort((a, b) => {
+                    if (a.lap !== b.lap) return b.lap - a.lap;
+                    return b.checkpointIndex - a.checkpointIndex;
+                });
+                
+                // Update positions
+                this.cars.forEach((car, index) => {
+                    car.position = index + 1;
+                });
+                
+                // Update leaderboard display
+                const positionsDiv = document.getElementById('positions');
+                positionsDiv.innerHTML = this.cars.map(car => 
+                    `<div style="color: ${car.color}">${car.position}. ${car.isPlayer ? 'YOU' : 'AI ' + car.id}</div>`
+                ).join('');
+            }
+            
+            drawTrack() {
+                this.ctx.fillStyle = '#2a5a2a';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw track (gray ring)
+                this.ctx.fillStyle = '#666';
+                this.ctx.beginPath();
+                this.ctx.arc(this.track.centerX, this.track.centerY, this.track.radiusOuter, 0, Math.PI * 2);
+                this.ctx.arc(this.track.centerX, this.track.centerY, this.track.radiusInner, 0, Math.PI * 2, true);
+                this.ctx.fill();
+                
+                // Draw start/finish line
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.moveTo(this.track.centerX, this.track.centerY - this.track.radiusOuter);
+                this.ctx.lineTo(this.track.centerX, this.track.centerY - this.track.radiusInner);
+                this.ctx.stroke();
+            }
+            
+            drawCar(car) {
+                this.ctx.save();
+                this.ctx.translate(car.x, car.y);
+                this.ctx.rotate(car.angle);
+                
+                // Car body
+                this.ctx.fillStyle = car.color;
+                this.ctx.fillRect(-8, -4, 16, 8);
+                
+                // Car outline
+                this.ctx.strokeStyle = '#000';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(-8, -4, 16, 8);
+                
+                // Direction indicator
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fillRect(6, -2, 4, 4);
+                
+                this.ctx.restore();
+                
+                // Position number above car
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(car.position, car.x, car.y - 15);
+            }
+            
+            updateTimer() {
+                if (this.gameState === 'racing') {
+                    const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    document.getElementById('timer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }
+            
+            update() {
+                if (this.gameState === 'racing') {
+                    this.cars.forEach(car => this.updateCar(car));
+                    this.updatePositions();
+                    this.updateTimer();
+                    
+                    // Check for race finish
+                    if (this.cars[0].lap > 3) {
+                        this.gameState = 'finished';
+                    }
+                }
+            }
+            
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.drawTrack();
+                this.cars.forEach(car => this.drawCar(car));
+                
+                if (this.gameState === 'finished') {
+                    this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = '24px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('Race Finished!', this.canvas.width / 2, this.canvas.height / 2);
+                    
+                    const playerCar = this.cars.find(car => car.isPlayer);
+                    this.ctx.fillText(`You finished ${playerCar.position}${this.getOrdinalSuffix(playerCar.position)}!`, 
+                        this.canvas.width / 2, this.canvas.height / 2 + 40);
+                }
+            }
+            
+            getOrdinalSuffix(num) {
+                const suffix = ['th', 'st', 'nd', 'rd'];
+                const value = num % 100;
+                return suffix[(value - 20) % 10] || suffix[value] || suffix[0];
+            }
+            
+            gameLoop() {
+                this.update();
+                this.draw();
+                this.frameCount++;
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', () => {
+            new RacingGame();
+        });
+        
+        // Handle orientation changes
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                location.reload();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
