@@ -63,29 +63,39 @@
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 20px;
+            gap: 15px;
+            align-items: center;
             z-index: 10;
         }
 
         .control-btn {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             border: 3px solid #fff;
             background: rgba(255,255,255,0.2);
             color: white;
-            font-size: 24px;
+            font-size: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             user-select: none;
             cursor: pointer;
             touch-action: manipulation;
+            transition: all 0.1s ease;
+            backdrop-filter: blur(5px);
         }
 
         .control-btn:active {
+            background: rgba(255,255,255,0.5);
+            transform: scale(0.9);
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.3);
+        }
+
+        .control-btn.pressed {
             background: rgba(255,255,255,0.4);
             transform: scale(0.95);
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
         }
 
         #startScreen {
@@ -115,23 +125,78 @@
         }
 
         .steering-wheel {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             border: 4px solid #fff;
             border-radius: 50%;
             position: relative;
             background: rgba(255,255,255,0.1);
+            transition: transform 0.1s ease;
+            backdrop-filter: blur(5px);
         }
 
         .steering-indicator {
-            width: 4px;
-            height: 30px;
+            width: 6px;
+            height: 35px;
             background: #fff;
             position: absolute;
-            top: 10px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            border-radius: 2px;
+            border-radius: 3px;
+            transition: all 0.1s ease;
+        }
+
+        /* Gas and brake specific styling */
+        #gasBtn {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: #4CAF50;
+        }
+
+        #gasBtn:active, #gasBtn.pressed {
+            background: rgba(76, 175, 80, 0.6);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.7);
+        }
+
+        #brakeBtn {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: #f44336;
+        }
+
+        #brakeBtn:active, #brakeBtn.pressed {
+            background: rgba(244, 67, 54, 0.6);
+            box-shadow: 0 0 20px rgba(244, 67, 54, 0.7);
+        }
+
+        /* Responsive controls */
+        @media (max-width: 480px) {
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+            
+            .steering-wheel {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .steering-indicator {
+                width: 4px;
+                height: 30px;
+                top: 12px;
+            }
+        }
+
+        /* Vibration feedback indicator */
+        @keyframes vibrate {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        .vibrating {
+            animation: vibrate 0.1s ease-in-out;
         }
     </style>
 </head>
@@ -164,6 +229,7 @@
             <h1>🏎️ Racing Game</h1>
             <p>Race against 7 AI opponents!</p>
             <p>Stay on track for best speed</p>
+            <p>Use steering wheel or arrow buttons</p>
             <button id="startBtn">START RACE</button>
         </div>
     </div>
@@ -175,7 +241,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.setupCanvas();
                 
-                this.gameState = 'menu'; // menu, racing, finished
+                this.gameState = 'menu';
                 this.frameCount = 0;
                 this.startTime = 0;
                 
@@ -186,7 +252,8 @@
                     left: false,
                     right: false,
                     gas: false,
-                    brake: false
+                    brake: false,
+                    steerAngle: 0 // For analog steering
                 };
                 
                 this.setupControls();
@@ -269,47 +336,193 @@
                 const rightBtn = document.getElementById('rightBtn');
                 const gasBtn = document.getElementById('gasBtn');
                 const brakeBtn = document.getElementById('brakeBtn');
+                const steeringWheel = document.getElementById('steeringWheel');
+                const steeringIndicator = document.querySelector('.steering-indicator');
                 const startBtn = document.getElementById('startBtn');
                 
-                // Touch controls
+                // Enhanced touch controls with visual feedback
                 const addTouchControls = (element, key) => {
                     element.addEventListener('touchstart', (e) => {
                         e.preventDefault();
                         this.input[key] = true;
+                        element.classList.add('pressed');
+                        this.hapticFeedback();
                     });
+                    
                     element.addEventListener('touchend', (e) => {
                         e.preventDefault();
                         this.input[key] = false;
+                        element.classList.remove('pressed');
+                    });
+                    
+                    element.addEventListener('touchcancel', (e) => {
+                        e.preventDefault();
+                        this.input[key] = false;
+                        element.classList.remove('pressed');
+                    });
+                    
+                    // Mouse controls for desktop
+                    element.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        this.input[key] = true;
+                        element.classList.add('pressed');
+                    });
+                    
+                    element.addEventListener('mouseup', (e) => {
+                        e.preventDefault();
+                        this.input[key] = false;
+                        element.classList.remove('pressed');
+                    });
+                    
+                    element.addEventListener('mouseleave', (e) => {
+                        this.input[key] = false;
+                        element.classList.remove('pressed');
                     });
                 };
                 
+                // Add enhanced controls
                 addTouchControls(leftBtn, 'left');
                 addTouchControls(rightBtn, 'right');
                 addTouchControls(gasBtn, 'gas');
                 addTouchControls(brakeBtn, 'brake');
                 
-                // Keyboard controls
+                // Steering wheel analog control
+                let isDragging = false;
+                let startAngle = 0;
+                
+                const getAngleFromEvent = (e) => {
+                    const rect = steeringWheel.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    let clientX, clientY;
+                    if (e.touches && e.touches[0]) {
+                        clientX = e.touches[0].clientX;
+                        clientY = e.touches[0].clientY;
+                    } else {
+                        clientX = e.clientX;
+                        clientY = e.clientY;
+                    }
+                    
+                    return Math.atan2(clientY - centerY, clientX - centerX);
+                };
+                
+                const startSteering = (e) => {
+                    e.preventDefault();
+                    isDragging = true;
+                    startAngle = getAngleFromEvent(e);
+                    this.hapticFeedback();
+                };
+                
+                const updateSteering = (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    
+                    const currentAngle = getAngleFromEvent(e);
+                    let angleDiff = currentAngle - startAngle;
+                    
+                    // Normalize angle difference
+                    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+                    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+                    
+                    // Convert to steering input (-1 to 1)
+                    this.input.steerAngle = Math.max(-1, Math.min(1, angleDiff / (Math.PI / 3)));
+                    
+                    // Update visual indicator
+                    const rotation = this.input.steerAngle * 45; // Max 45 degrees rotation
+                    steeringIndicator.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+                    steeringWheel.style.transform = `rotate(${rotation}deg)`;
+                };
+                
+                const endSteering = (e) => {
+                    e.preventDefault();
+                    isDragging = false;
+                    this.input.steerAngle = 0;
+                    
+                    // Reset visual state
+                    steeringIndicator.style.transform = 'translateX(-50%) rotate(0deg)';
+                    steeringWheel.style.transform = 'rotate(0deg)';
+                };
+                
+                // Touch events for steering wheel
+                steeringWheel.addEventListener('touchstart', startSteering);
+                document.addEventListener('touchmove', updateSteering);
+                document.addEventListener('touchend', endSteering);
+                
+                // Mouse events for steering wheel
+                steeringWheel.addEventListener('mousedown', startSteering);
+                document.addEventListener('mousemove', updateSteering);
+                document.addEventListener('mouseup', endSteering);
+                
+                // Enhanced keyboard controls
                 document.addEventListener('keydown', (e) => {
                     switch(e.key) {
-                        case 'ArrowLeft': this.input.left = true; break;
-                        case 'ArrowRight': this.input.right = true; break;
-                        case 'ArrowUp': this.input.gas = true; break;
-                        case 'ArrowDown': this.input.brake = true; break;
+                        case 'ArrowLeft':
+                        case 'a':
+                        case 'A':
+                            this.input.left = true;
+                            leftBtn.classList.add('pressed');
+                            break;
+                        case 'ArrowRight':
+                        case 'd':
+                        case 'D':
+                            this.input.right = true;
+                            rightBtn.classList.add('pressed');
+                            break;
+                        case 'ArrowUp':
+                        case 'w':
+                        case 'W':
+                            this.input.gas = true;
+                            gasBtn.classList.add('pressed');
+                            break;
+                        case 'ArrowDown':
+                        case 's':
+                        case 'S':
+                            this.input.brake = true;
+                            brakeBtn.classList.add('pressed');
+                            break;
                     }
                 });
                 
                 document.addEventListener('keyup', (e) => {
                     switch(e.key) {
-                        case 'ArrowLeft': this.input.left = false; break;
-                        case 'ArrowRight': this.input.right = false; break;
-                        case 'ArrowUp': this.input.gas = false; break;
-                        case 'ArrowDown': this.input.brake = false; break;
+                        case 'ArrowLeft':
+                        case 'a':
+                        case 'A':
+                            this.input.left = false;
+                            leftBtn.classList.remove('pressed');
+                            break;
+                        case 'ArrowRight':
+                        case 'd':
+                        case 'D':
+                            this.input.right = false;
+                            rightBtn.classList.remove('pressed');
+                            break;
+                        case 'ArrowUp':
+                        case 'w':
+                        case 'W':
+                            this.input.gas = false;
+                            gasBtn.classList.remove('pressed');
+                            break;
+                        case 'ArrowDown':
+                        case 's':
+                        case 'S':
+                            this.input.brake = false;
+                            brakeBtn.classList.remove('pressed');
+                            break;
                     }
                 });
                 
                 startBtn.addEventListener('click', () => {
                     this.startRace();
                 });
+            }
+            
+            // Haptic feedback for mobile devices
+            hapticFeedback() {
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
             }
             
             startRace() {
@@ -337,11 +550,23 @@
                 
                 car.onTrack = distFromCenter <= this.track.radiusOuter && distFromCenter >= this.track.radiusInner;
                 
-                // Off-track penalty
-                if (!car.onTrack) {
+                // Off-track penalty with visual feedback
+                if (!car.onTrack && car.isPlayer) {
                     car.vx *= 0.8;
                     car.vy *= 0.8;
-                    car.maxSpeed = car.isPlayer ? 3 : 2;
+                    car.maxSpeed = 3;
+                    
+                    // Add screen shake effect
+                    if (this.frameCount % 10 === 0) {
+                        document.getElementById('gameContainer').classList.add('vibrating');
+                        setTimeout(() => {
+                            document.getElementById('gameContainer').classList.remove('vibrating');
+                        }, 100);
+                    }
+                } else if (!car.onTrack) {
+                    car.vx *= 0.8;
+                    car.vy *= 0.8;
+                    car.maxSpeed = 2;
                 } else {
                     car.maxSpeed = car.isPlayer ? 5 : 4 + Math.random();
                 }
@@ -357,17 +582,31 @@
             }
             
             updatePlayerCar(car) {
-                // Turning
-                if (this.input.left) car.angle -= car.turnSpeed;
-                if (this.input.right) car.angle += car.turnSpeed;
+                // Enhanced steering with analog support
+                let steerInput = 0;
                 
-                // Acceleration
+                if (this.input.steerAngle !== 0) {
+                    // Use analog steering from wheel
+                    steerInput = this.input.steerAngle;
+                } else {
+                    // Use digital steering from buttons
+                    if (this.input.left) steerInput -= 1;
+                    if (this.input.right) steerInput += 1;
+                }
+                
+                // Apply steering with speed-dependent sensitivity
+                const steerSensitivity = Math.max(0.5, 1 - car.speed / car.maxSpeed * 0.3);
+                car.angle += steerInput * car.turnSpeed * steerSensitivity;
+                
+                // Enhanced acceleration with progressive response
                 if (this.input.gas) {
-                    car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
+                    const accelRate = car.onTrack ? car.acceleration : car.acceleration * 0.7;
+                    car.speed = Math.min(car.speed + accelRate, car.maxSpeed);
                 } else if (this.input.brake) {
                     car.speed = Math.max(car.speed - car.acceleration * 2, -car.maxSpeed / 2);
                 } else {
-                    car.speed *= car.friction;
+                    // Improved natural deceleration
+                    car.speed *= car.onTrack ? car.friction : car.friction * 0.9;
                 }
                 
                 // Update velocity
