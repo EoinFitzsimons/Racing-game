@@ -110,7 +110,7 @@
             justify-content: center;
             align-items: center;
             color: white;
-            z-index: 20;
+            z-index: 30;
         }
 
         #startBtn {
@@ -122,6 +122,20 @@
             border-radius: 10px;
             cursor: pointer;
             margin-top: 20px;
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 31;
+            touch-action: manipulation;
+        }
+
+        #startBtn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        #startBtn:active {
+            background: #3d8b40;
+            transform: scale(0.95);
         }
 
         .steering-wheel {
@@ -435,7 +449,7 @@
                 };
                 
                 const endSteering = (e) => {
-                    e.preventDefault();
+                    if (e) e.preventDefault();
                     isDragging = false;
                     this.input.steerAngle = 0;
                     
@@ -481,6 +495,12 @@
                             this.input.brake = true;
                             brakeBtn.classList.add('pressed');
                             break;
+                        case 'Enter':
+                        case ' ':
+                            if (this.gameState === 'menu') {
+                                this.startRace();
+                            }
+                            break;
                     }
                 });
                 
@@ -513,9 +533,18 @@
                     }
                 });
                 
-                startBtn.addEventListener('click', () => {
+                // Fixed start button event handlers
+                const startRaceHandler = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Start button clicked!'); // Debug log
                     this.startRace();
-                });
+                };
+                
+                // Multiple event listeners to ensure it works
+                startBtn.addEventListener('click', startRaceHandler);
+                startBtn.addEventListener('touchend', startRaceHandler);
+                startBtn.addEventListener('mouseup', startRaceHandler);
             }
             
             // Haptic feedback for mobile devices
@@ -526,9 +555,13 @@
             }
             
             startRace() {
+                console.log('Starting race!'); // Debug log
                 this.gameState = 'racing';
                 this.startTime = Date.now();
-                document.getElementById('startScreen').style.display = 'none';
+                const startScreen = document.getElementById('startScreen');
+                if (startScreen) {
+                    startScreen.style.display = 'none';
+                }
             }
             
             updateCar(car) {
@@ -558,10 +591,13 @@
                     
                     // Add screen shake effect
                     if (this.frameCount % 10 === 0) {
-                        document.getElementById('gameContainer').classList.add('vibrating');
-                        setTimeout(() => {
-                            document.getElementById('gameContainer').classList.remove('vibrating');
-                        }, 100);
+                        const container = document.getElementById('gameContainer');
+                        if (container) {
+                            container.classList.add('vibrating');
+                            setTimeout(() => {
+                                container.classList.remove('vibrating');
+                            }, 100);
+                        }
                     }
                 } else if (!car.onTrack) {
                     car.vx *= 0.8;
@@ -576,8 +612,10 @@
                 
                 // Update UI for player
                 if (car.isPlayer) {
-                    document.getElementById('speedometer').textContent = Math.round(car.speed * 20);
-                    document.getElementById('lapCount').textContent = `${car.lap}/3`;
+                    const speedometer = document.getElementById('speedometer');
+                    const lapCount = document.getElementById('lapCount');
+                    if (speedometer) speedometer.textContent = Math.round(car.speed * 20);
+                    if (lapCount) lapCount.textContent = `${car.lap}/3`;
                 }
             }
             
@@ -672,9 +710,11 @@
                 
                 // Update leaderboard display
                 const positionsDiv = document.getElementById('positions');
-                positionsDiv.innerHTML = this.cars.map(car => 
-                    `<div style="color: ${car.color}">${car.position}. ${car.isPlayer ? 'YOU' : 'AI ' + car.id}</div>`
-                ).join('');
+                if (positionsDiv) {
+                    positionsDiv.innerHTML = this.cars.map(car => 
+                        `<div style="color: ${car.color}">${car.position}. ${car.isPlayer ? 'YOU' : 'AI ' + car.id}</div>`
+                    ).join('');
+                }
             }
             
             drawTrack() {
@@ -729,7 +769,10 @@
                     const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
                     const minutes = Math.floor(elapsed / 60);
                     const seconds = elapsed % 60;
-                    document.getElementById('timer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    const timer = document.getElementById('timer');
+                    if (timer) {
+                        timer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
                 }
             }
             
