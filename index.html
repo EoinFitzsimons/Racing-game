@@ -438,6 +438,7 @@
                 this.frameCount = 0;
                 this.startTime = 0;
                 this.raceNumber = 1;
+                this.raceDistance = 3; // 3 laps
                 
                 this.cars = [];
                 this.track = this.generateTrack();
@@ -506,12 +507,14 @@
                         friction: 0.98,
                         turnSpeed: 0.04 + team.skill * 0.02,
                         color: team.color,
-                        lap: 1,
+                        lap: 0,
                         checkpointIndex: 0,
                         position: i + 1,
                         onTrack: true,
                         aiTarget: 0,
-                        raceTime: 0
+                        raceTime: 0,
+                        finished: false,
+                        finishTime: 0
                     };
                     this.cars.push(car);
                 });
@@ -635,7 +638,7 @@
                     <p style="margin-bottom: 15px;">${team.symbolism}</p>
                     
                     <h3>Team Story</h3>
-                    <p style="background: rgba(${team.color.slice(1)}, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid ${team.color};">
+                    <p style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid ${team.color};">
                         ${team.story}
                     </p>
                 `;
@@ -653,13 +656,342 @@
             }
             
             updateAICar(car) {
+                if (car.finished) return;
+                
                 // Enhanced AI with team personality
-                const team = car.team;
                 const targetCheckpoint = this.track.checkpoints[car.aiTarget];
                 const dx = targetCheckpoint.x - car.x;
                 const dy = targetCheckpoint.y - car.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
                 const targetAngle = Math.atan2(dy, dx);
                 
                 // Check if reached target checkpoint
-                if (Math.sqrt(dx * dx + dy * dy) < 40) {
-                    car.aiTarget = (car.
+                if (distance < 30) {
+                    car.aiTarget = (car.aiTarget + 1) % this.track.checkpoints.length;
+                    if (car.aiTarget === 0) {
+                        car.lap++;
+                        if (car.lap >= this.raceDistance && !car.finished) {
+                            car.finished = true;
+                            car.finishTime = Date.now() - this.startTime;
+                        }
+                    }
+                }
+                
+                // Personality-based driving modifications
+                let speedModifier = 1;
+                let aggressionModifier = 1;
+                
+                switch (car.team.id) {
+                    case 0: // Crimson Shadows - Aggressive but strategic
+                        speedModifier = 1.1;
+                        aggressionModifier = 1.2;
+                        break;
+                    case 1: // Neon Velocity - Tech-enhanced precision
+                        speedModifier = 1.15;
+                        aggressionModifier = 0.9;
+                        break;
+                    case 2: // Azure Lightning - Heroic consistency
+                        speedModifier = 1.05;
+                        aggressionModifier = 1.0;
+                        break;
+                    case 3: // Golden Eagles - Underdog determination
+                        speedModifier = 0.95 + (car.lap * 0.05); // Gets faster each lap
+                        aggressionModifier = 1.1;
+                        break;
+                    case 4: // Violet Storm - Mystical unpredictability
+                        speedModifier = 0.9 + Math.sin(this.frameCount * 0.01) * 0.3;
+                        aggressionModifier = 1.0;
+                        break;
+                    case 5: // Aqua Titans - Smooth and efficient
+                        speedModifier = 1.08;
+                        aggressionModifier = 0.8;
+                        break;
+                    case 6: // Solar Flare - Fast but risky
+                        speedModifier = 1.12;
+                        aggressionModifier = 1.3;
+                        break;
+                    case 7: // Cosmic Void - Erratic but powerful
+                        speedModifier = 0.85 + Math.random() * 0.4;
+                        aggressionModifier = 1.1;
+                        break;
+                }
+                
+                // Apply team skill and personality
+                const effectiveSkill = car.team.skill * speedModifier;
+                const targetSpeed = car.maxSpeed * effectiveSkill * aggressionModifier;
+                
+                // Steering towards target
+                let angleDiff = targetAngle - car.angle;
+                while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+                while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+                
+                car.angle += Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), car.turnSpeed);
+                
+                // Speed control
+                if (car.speed < targetSpeed) {
+                    car.speed += car.acceleration;
+                } else {
+                    car.speed *= car.friction;
+                }
+                
+                // Apply movement
+                car.vx = Math.cos(car.angle) * car.speed;
+                car.vy = Math.sin(car.angle) * car.speed;
+                car.x += car.vx;
+                car.y += car.vy;
+                
+                // Track boundaries
+                const distFromCenter = Math.sqrt(
+                    (car.x - this.track.centerX) ** 2 + 
+                    (car.y - this.track.centerY) ** 2
+                );
+                
+                if (distFromCenter > this.track.radiusOuter - 10 || 
+                    distFromCenter < this.track.radiusInner + 10) {
+                    car.speed *= 0.8; // Slow down when hitting walls
+                    
+                    // Push back towards track
+                    const pushAngle = Math.atan2(
+                        car.y - this.track.centerY, 
+                        car.x - this.track.centerX
+                    );
+                    
+                    if (distFromCenter > this.track.radiusOuter - 10) {
+                        car.x = this.track.centerX + Math.cos(pushAngle) * (this.track.radiusOuter - 15);
+                        car.y = this.track.centerY + Math.sin(pushAngle) * (this.track.radiusOuter - 15);
+                    } else {
+                        car.x = this.track.centerX + Math.cos(pushAngle) * (this.track.radiusInner + 15);
+                        car.y = this.track.centerY + Math.sin(pushAngle) * (this.track.radiusInner + 15);
+                    }
+                }
+            }
+            
+            updatePositions() {
+                // Sort cars by lap and progress
+                this.cars.sort((a, b) => {
+                    if (a.finished && !b.finished) return -1;
+                    if (!a.finished && b.finished) return 1;
+                    if (a.finished && b.finished) return a.finishTime - b.finishTime;
+                    
+                    if (a.lap !== b.lap) return b.lap - a.lap;
+                    
+                    // Same lap, compare checkpoint progress
+                    if (a.checkpointIndex !== b.checkpointIndex) {
+                        return b.checkpointIndex - a.checkpointIndex;
+                    }
+                    
+                    // Same checkpoint, compare distance to next checkpoint
+                    const aTarget = this.track.checkpoints[a.aiTarget];
+                    const bTarget = this.track.checkpoints[b.aiTarget];
+                    const aDist = Math.sqrt((a.x - aTarget.x) ** 2 + (a.y - aTarget.y) ** 2);
+                    const bDist = Math.sqrt((b.x - bTarget.x) ** 2 + (b.y - bTarget.y) ** 2);
+                    
+                    return aDist - bDist;
+                });
+                
+                // Update positions
+                this.cars.forEach((car, index) => {
+                    car.position = index + 1;
+                });
+                
+                // Update leaderboard display
+                const positionsDiv = document.getElementById('positions');
+                positionsDiv.innerHTML = this.cars.map((car, index) => {
+                    const status = car.finished ? 'FINISHED' : `Lap ${car.lap + 1}/${this.raceDistance}`;
+                    return `<div class="position-item" style="color: ${car.color}">
+                        ${index + 1}. ${car.team.name} - ${status}
+                    </div>`;
+                }).join('');
+            }
+            
+            checkRaceComplete() {
+                const finishedCars = this.cars.filter(car => car.finished);
+                if (finishedCars.length === this.cars.length || finishedCars.length > 0 && Date.now() - this.startTime > 60000) {
+                    this.gameState = 'finished';
+                    this.showRaceResults();
+                }
+            }
+            
+            showRaceResults() {
+                const winner = this.cars.find(car => car.position === 1);
+                const winnerAnnouncement = document.getElementById('winnerAnnouncement');
+                const payoutInfo = document.getElementById('payoutInfo');
+                
+                winnerAnnouncement.innerHTML = `
+                    <h3 style="color: ${winner.color}">🏆 ${winner.team.name} WINS!</h3>
+                    <p>Race Time: ${this.formatTime(winner.finishTime || Date.now() - this.startTime)}</p>
+                `;
+                
+                let payoutText = '';
+                if (this.currentBet && this.currentBet.team.id === winner.id) {
+                    const odds = parseFloat(this.currentBet.team.odds.split(':')[0]);
+                    const payout = this.currentBet.amount * odds;
+                    this.playerMoney += payout;
+                    payoutText = `🎉 YOU WON! Payout: $${payout}`;
+                    document.getElementById('money').textContent = this.playerMoney;
+                } else if (this.currentBet) {
+                    payoutText = `😞 You lost your bet on ${this.currentBet.team.name}`;
+                } else {
+                    payoutText = `No bet placed this race`;
+                }
+                
+                payoutInfo.innerHTML = payoutText;
+                document.getElementById('raceResults').style.display = 'block';
+            }
+            
+            formatTime(ms) {
+                const seconds = Math.floor(ms / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                const remainingMs = ms % 1000;
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}.${Math.floor(remainingMs / 100)}`;
+            }
+            
+            drawTrack() {
+                const ctx = this.ctx;
+                
+                // Draw grass background
+                ctx.fillStyle = '#2a5a2a';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw track
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 4;
+                
+                // Outer track boundary
+                ctx.beginPath();
+                ctx.arc(this.track.centerX, this.track.centerY, this.track.radiusOuter, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // Inner track boundary
+                ctx.beginPath();
+                ctx.arc(this.track.centerX, this.track.centerY, this.track.radiusInner, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // Draw track surface
+                ctx.fillStyle = '#444';
+                ctx.beginPath();
+                ctx.arc(this.track.centerX, this.track.centerY, this.track.radiusOuter, 0, 2 * Math.PI);
+                ctx.arc(this.track.centerX, this.track.centerY, this.track.radiusInner, 0, 2 * Math.PI, true);
+                ctx.fill();
+                
+                // Draw checkpoints
+                this.track.checkpoints.forEach((checkpoint, i) => {
+                    ctx.fillStyle = i === 0 ? '#FFD700' : '#FFF';
+                    ctx.beginPath();
+                    ctx.arc(checkpoint.x, checkpoint.y, 3, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    if (i === 0) {
+                        ctx.fillStyle = '#FFD700';
+                        ctx.font = '12px Arial';
+                        ctx.fillText('START/FINISH', checkpoint.x - 35, checkpoint.y - 15);
+                    }
+                });
+            }
+            
+            drawCars() {
+                this.cars.forEach(car => {
+                    const ctx = this.ctx;
+                    
+                    ctx.save();
+                    ctx.translate(car.x, car.y);
+                    ctx.rotate(car.angle);
+                    
+                    // Car body
+                    ctx.fillStyle = car.color;
+                    ctx.fillRect(-6, -3, 12, 6);
+                    
+                    // Car outline
+                    ctx.strokeStyle = '#FFF';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(-6, -3, 12, 6);
+                    
+                    // Position number
+                    ctx.fillStyle = '#FFF';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(car.position.toString(), 0, 2);
+                    
+                    ctx.restore();
+                    
+                    // Speed trail effect
+                    if (car.speed > 1) {
+                        ctx.save();
+                        ctx.globalAlpha = 0.3;
+                        ctx.strokeStyle = car.color;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(car.x, car.y);
+                        ctx.lineTo(
+                            car.x - car.vx * 5,
+                            car.y - car.vy * 5
+                        );
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                });
+            }
+            
+            updateTimer() {
+                if (this.gameState === 'racing') {
+                    const elapsed = Date.now() - this.startTime;
+                    document.getElementById('timer').textContent = this.formatTime(elapsed);
+                }
+            }
+            
+            gameLoop() {
+                this.frameCount++;
+                
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw everything
+                this.drawTrack();
+                this.drawCars();
+                
+                // Update game state
+                if (this.gameState === 'racing') {
+                    this.cars.forEach(car => this.updateAICar(car));
+                    this.updatePositions();
+                    this.updateTimer();
+                    this.checkRaceComplete();
+                }
+                
+                // Continue game loop
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        // Global functions
+        function resetRace() {
+            document.getElementById('raceResults').style.display = 'none';
+            game.gameState = 'betting';
+            game.raceNumber++;
+            game.currentBet = null;
+            game.selectedTeam = null;
+            document.getElementById('raceNumber').textContent = game.raceNumber;
+            document.getElementById('raceStatus').textContent = 'Betting Open';
+            document.getElementById('currentBet').innerHTML = '';
+            document.getElementById('timer').textContent = '0:00';
+            
+            // Clear team selections
+            document.querySelectorAll('.team-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            game.updateBetButton();
+        }
+        
+        function closeStory() {
+            document.getElementById('storyDetails').style.display = 'none';
+        }
+        
+        // Start the game
+        let game;
+        window.addEventListener('load', () => {
+            game = new RacingGame();
+        });
+    </script>
+</body>
+</html>
