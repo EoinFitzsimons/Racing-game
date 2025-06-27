@@ -3,37 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Racing Game</title>
+    <title>Championship Racing Bets</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            touch-action: none;
         }
 
         body {
-            background: #1a1a1a;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+            color: white;
             min-height: 100vh;
         }
 
         #gameContainer {
             position: relative;
-            max-width: 100vw;
-            max-height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
             background: #333;
-            border-radius: 10px;
+            border-radius: 15px;
             overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         #gameCanvas {
             display: block;
             background: #2a5a2a;
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
         }
 
         #ui {
@@ -43,174 +44,184 @@
             color: white;
             font-size: 14px;
             z-index: 10;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        #bettingPanel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 300px;
+            max-height: 580px;
+            overflow-y: auto;
+            z-index: 15;
+        }
+
+        .team-card {
+            background: rgba(255,255,255,0.1);
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .team-card:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        .team-card.selected {
+            background: rgba(255,215,0,0.3);
+            box-shadow: 0 0 15px rgba(255,215,0,0.5);
+        }
+
+        .team-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .team-story {
+            font-size: 11px;
+            color: #ccc;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .team-odds {
+            font-size: 12px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        #betControls {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #555;
+        }
+
+        #betAmount {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+        }
+
+        #placeBetBtn, #startRaceBtn {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #placeBetBtn:hover, #startRaceBtn:hover {
+            background: #45a049;
+        }
+
+        #placeBetBtn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        #wallet {
+            background: rgba(255,215,0,0.2);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 10px;
+            border: 1px solid #FFD700;
+        }
+
+        #raceResults {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 25;
+            border: 2px solid #FFD700;
+        }
+
+        .story-details {
+            background: rgba(0,0,0,0.8);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 40px;
+            display: none;
+            z-index: 30;
+            overflow-y: auto;
+        }
+
+        .story-content {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+        }
+
+        .close-story {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
         #leaderboard {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            bottom: 10px;
+            left: 10px;
             background: rgba(0,0,0,0.7);
             padding: 10px;
-            border-radius: 5px;
-            color: white;
+            border-radius: 8px;
+            min-width: 200px;
+        }
+
+        .position-item {
+            margin: 3px 0;
             font-size: 12px;
-            min-width: 120px;
         }
 
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            z-index: 10;
-        }
-
-        .control-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: 3px solid #fff;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            font-size: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-            cursor: pointer;
-            touch-action: manipulation;
-            transition: all 0.1s ease;
-            backdrop-filter: blur(5px);
-        }
-
-        .control-btn:active {
-            background: rgba(255,255,255,0.5);
-            transform: scale(0.9);
-            box-shadow: inset 0 0 20px rgba(255,255,255,0.3);
-        }
-
-        .control-btn.pressed {
-            background: rgba(255,255,255,0.4);
-            transform: scale(0.95);
-            box-shadow: 0 0 15px rgba(255,255,255,0.5);
-        }
-
-        #startScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            z-index: 30;
-        }
-
-        #startBtn {
-            padding: 15px 30px;
-            font-size: 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.2s ease;
-            position: relative;
-            z-index: 31;
-            touch-action: manipulation;
-        }
-
-        #startBtn:hover {
-            background: #45a049;
-            transform: scale(1.05);
-        }
-
-        #startBtn:active {
-            background: #3d8b40;
-            transform: scale(0.95);
-        }
-
-        .steering-wheel {
-            width: 100px;
-            height: 100px;
-            border: 4px solid #fff;
-            border-radius: 50%;
-            position: relative;
-            background: rgba(255,255,255,0.1);
-            transition: transform 0.1s ease;
-            backdrop-filter: blur(5px);
-        }
-
-        .steering-indicator {
-            width: 6px;
-            height: 35px;
-            background: #fff;
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-radius: 3px;
-            transition: all 0.1s ease;
-        }
-
-        /* Gas and brake specific styling */
-        #gasBtn {
-            background: rgba(76, 175, 80, 0.3);
-            border-color: #4CAF50;
-        }
-
-        #gasBtn:active, #gasBtn.pressed {
-            background: rgba(76, 175, 80, 0.6);
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.7);
-        }
-
-        #brakeBtn {
-            background: rgba(244, 67, 54, 0.3);
-            border-color: #f44336;
-        }
-
-        #brakeBtn:active, #brakeBtn.pressed {
-            background: rgba(244, 67, 54, 0.6);
-            box-shadow: 0 0 20px rgba(244, 67, 54, 0.7);
-        }
-
-        /* Responsive controls */
-        @media (max-width: 480px) {
-            .control-btn {
-                width: 60px;
-                height: 60px;
-                font-size: 24px;
+        @media (max-width: 768px) {
+            #bettingPanel {
+                position: relative;
+                width: 100%;
+                max-height: none;
+                margin-top: 10px;
             }
             
-            .steering-wheel {
-                width: 80px;
-                height: 80px;
+            #gameContainer {
+                flex-direction: column;
             }
-            
-            .steering-indicator {
-                width: 4px;
-                height: 30px;
-                top: 12px;
-            }
-        }
-
-        /* Vibration feedback indicator */
-        @keyframes vibrate {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-2px); }
-            75% { transform: translateX(2px); }
-        }
-
-        .vibrating {
-            animation: vibrate 0.1s ease-in-out;
         }
     </style>
 </head>
@@ -219,72 +230,232 @@
         <canvas id="gameCanvas"></canvas>
         
         <div id="ui">
-            <div>Lap: <span id="lapCount">1/3</span></div>
-            <div>Speed: <span id="speedometer">0</span> mph</div>
+            <div>Race: <span id="raceNumber">1</span></div>
             <div>Time: <span id="timer">0:00</span></div>
+            <div>Status: <span id="raceStatus">Betting Open</span></div>
+        </div>
+
+        <div id="bettingPanel">
+            <div id="wallet">
+                💰 Wallet: $<span id="money">1000</span>
+            </div>
+            
+            <h3 style="text-align: center; margin-bottom: 15px;">🏁 Championship Teams</h3>
+            
+            <div id="teamsList"></div>
+            
+            <div id="betControls">
+                <input type="number" id="betAmount" placeholder="Bet Amount" min="10" max="1000" value="50">
+                <button id="placeBetBtn" disabled>Place Bet</button>
+                <button id="startRaceBtn">Start Race!</button>
+            </div>
+            
+            <div id="currentBet" style="margin-top: 10px; font-size: 12px; color: #FFD700;"></div>
         </div>
 
         <div id="leaderboard">
-            <div style="font-weight: bold; margin-bottom: 5px;">Positions</div>
+            <div style="font-weight: bold; margin-bottom: 5px;">🏆 Live Positions</div>
             <div id="positions"></div>
         </div>
 
-        <div id="controls">
-            <div class="control-btn" id="leftBtn">⬅</div>
-            <div class="steering-wheel" id="steeringWheel">
-                <div class="steering-indicator"></div>
-            </div>
-            <div class="control-btn" id="rightBtn">➡</div>
-            <div class="control-btn" id="gasBtn">⬆</div>
-            <div class="control-btn" id="brakeBtn">⬇</div>
+        <div id="raceResults">
+            <h2>🏁 Race Complete!</h2>
+            <div id="winnerAnnouncement"></div>
+            <div id="payoutInfo"></div>
+            <button onclick="resetRace()" style="margin-top: 20px; padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Next Race</button>
         </div>
 
-        <div id="startScreen">
-            <h1>🏎️ Racing Game</h1>
-            <p>Race against 7 AI opponents!</p>
-            <p>Stay on track for best speed</p>
-            <p>Use steering wheel or arrow buttons</p>
-            <button id="startBtn">START RACE</button>
+        <div id="storyDetails" class="story-details">
+            <button class="close-story" onclick="closeStory()">✕</button>
+            <div class="story-content" id="storyContent"></div>
         </div>
     </div>
 
     <script>
+        // Team stories and data
+        const teams = [
+            {
+                id: 0,
+                name: "Crimson Shadows",
+                color: "#ff4444",
+                genre: "Dark Fantasy",
+                tone: "Mysterious and intense",
+                setting: "Underground racing circuits in a post-apocalyptic cityscape",
+                style: "Gritty realism with supernatural elements",
+                plot: "Former street racers turned shadow operatives seeking redemption",
+                characters: "Raven (driver) - A reformed criminal with photographic memory for racing lines",
+                conflict: "Battling inner demons while racing to fund an orphanage",
+                theme: "Redemption through sacrifice",
+                pov: "Third person limited (Raven's perspective)",
+                dialogue: "Terse, meaningful exchanges laden with subtext",
+                symbolism: "Red represents both blood and rebirth",
+                story: "Born from the ashes of the Great Circuit Wars, Crimson Shadows emerged when underground racer 'Raven' discovered their illegal winnings were being used to fund a children's sanctuary. Now they race not for glory, but to keep hope alive in the darkest corners of the city.",
+                odds: "4:1",
+                skill: 0.85
+            },
+            {
+                id: 1,
+                name: "Neon Velocity",
+                color: "#44ff44",
+                genre: "Cyberpunk",
+                tone: "Electric and rebellious",
+                setting: "Neo-Tokyo 2087, holographic racing circuits",
+                style: "High-tech prose with rapid-fire pacing",
+                plot: "Corporate hacker races to expose mega-corp corruption",
+                characters: "Zap (driver) - Augmented street racer with neural implants",
+                conflict: "Evading corporate assassins while maintaining racing performance",
+                theme: "Technology vs. humanity",
+                pov: "Second person (You are the rebellion)",
+                dialogue: "Tech-heavy slang mixed with philosophical observations",
+                symbolism: "Green light represents the digital frontier and freedom",
+                story: "In the neon-soaked streets of Neo-Tokyo, Zap races with illegal neural mods that sync directly with their vehicle. Each victory is a hack against the corporate overlords, each lap a statement that the human spirit cannot be digitized or controlled.",
+                odds: "3:1",
+                skill: 0.90
+            },
+            {
+                id: 2,
+                name: "Azure Lightning",
+                color: "#4444ff",
+                genre: "Epic Adventure",
+                tone: "Heroic and inspiring",
+                setting: "Floating sky cities connected by storm clouds",
+                style: "Lyrical and grandiose",
+                plot: "Sky pirate seeks to unite the fractured aerial kingdoms",
+                characters: "Storm (driver) - Noble sky pirate with a heart of gold",
+                conflict: "Overcoming political intrigue while mastering storm-riding",
+                theme: "Unity through adversity",
+                pov: "Omniscient narrator celebrating heroic deeds",
+                dialogue: "Formal speech patterns with nautical terminology",
+                symbolism: "Blue represents both sky freedom and royal nobility",
+                story: "Captain Storm once commanded the fastest cloudship in the Seven Skies until politics grounded their fleet. Now they race through tempests and lightning, seeking to prove that honor and speed can reunite the fractured sky kingdoms under one banner.",
+                odds: "5:1",
+                skill: 0.80
+            },
+            {
+                id: 3,
+                name: "Golden Eagles",
+                color: "#ffff44",
+                genre: "Sports Drama",
+                tone: "Triumphant and emotional",
+                setting: "International racing academies and championship circuits",
+                style: "Inspirational with focus on personal growth",
+                plot: "Underdog team fights for recognition in elite racing circles",
+                characters: "Phoenix (driver) - Small-town racer with big dreams",
+                conflict: "Overcoming class prejudice and financial limitations",
+                theme: "Dreams transcend circumstances",
+                pov: "First person (Phoenix's journal entries)",
+                dialogue: "Heartfelt conversations about hopes and fears",
+                symbolism: "Gold represents both wealth aspired to and inner worth discovered",
+                story: "From a small farming town, Phoenix learned to race on dusty back roads with a hand-me-down vehicle. Every championship lap is a love letter to their hometown, proving that golden hearts matter more than golden wallets.",
+                odds: "6:1",
+                skill: 0.75
+            },
+            {
+                id: 4,
+                name: "Violet Storm",
+                color: "#ff44ff",
+                genre: "Magical Realism",
+                tone: "Mystical and contemplative",
+                setting: "Ancient racing grounds where reality bends",
+                style: "Flowing prose with unexpected magical elements",
+                plot: "Mystical racer channels elemental forces to break ancient curses",
+                characters: "Mystic (driver) - Seer who races between dimensions",
+                conflict: "Balancing magical duties with mortal competition",
+                theme: "Balance between worlds",
+                pov: "Stream of consciousness with mystical insights",
+                dialogue: "Poetic speech that hints at deeper meanings",
+                symbolism: "Purple bridges the physical and spiritual realms",
+                story: "Legend speaks of a racer who sees the wind before it blows and knows the track before it's built. Mystic races not just against opponents, but against fate itself, weaving through reality's thin spots to protect both worlds from chaos.",
+                odds: "7:1",
+                skill: 0.70
+            },
+            {
+                id: 5,
+                name: "Aqua Titans",
+                color: "#44ffff",
+                genre: "Science Fiction",
+                tone: "Sleek and progressive",
+                setting: "Underwater cities and submarine racing tubes",
+                style: "Clean, technical prose with environmental themes",
+                plot: "Marine researcher races to save ocean ecosystems",
+                characters: "Tide (driver) - Marine biologist turned eco-warrior racer",
+                conflict: "Racing against time and pollution to save marine life",
+                theme: "Environmental stewardship",
+                pov: "Multiple perspectives including sea creatures",
+                dialogue: "Scientific precision mixed with environmental passion",
+                symbolism: "Cyan represents both water purity and technological harmony",
+                story: "Dr. Tide left their research lab when they realized racing could raise more awareness for ocean conservation than any paper ever could. Every victory funds another reef restoration, every sponsor dollar becomes another protected marine sanctuary.",
+                odds: "5:1",
+                skill: 0.82
+            },
+            {
+                id: 6,
+                name: "Solar Flare",
+                color: "#ffa544",
+                genre: "Space Opera",
+                tone: "Grand and adventurous",
+                setting: "Solar system-spanning race courses",
+                style: "Expansive descriptions of cosmic phenomena",
+                plot: "Interplanetary courier races to prevent galactic war",
+                characters: "Nova (driver) - Former space freighter pilot",
+                conflict: "Navigating political tensions while racing through asteroid fields",
+                theme: "Communication across vast distances",
+                pov: "Galactic historian documenting events",
+                dialogue: "Multiple alien languages and translation protocols",
+                symbolism: "Orange represents solar energy and life-giving warmth",
+                story: "When the outer colonies stopped communicating, Nova volunteered for the most dangerous job in the galaxy: racing diplomatic messages through pirate-infested space. Each delivery prevents wars, each victory saves worlds from silence.",
+                odds: "4:1",
+                skill: 0.88
+            },
+            {
+                id: 7,
+                name: "Cosmic Void",
+                color: "#a544ff",
+                genre: "Cosmic Horror",
+                tone: "Ominous and surreal",
+                setting: "Racing tracks that exist between dimensions",
+                style: "Dreamlike descriptions with reality distortions",
+                plot: "Reluctant racer prevents eldritch entities from entering reality",
+                characters: "Void (driver) - Guardian cursed with forbidden knowledge",
+                conflict: "Maintaining sanity while racing against cosmic horrors",
+                theme: "Sacrifice for unknowing masses",
+                pov: "Fragmented consciousness struggling with cosmic truth",
+                dialogue: "Whispered warnings and half-remembered prophecies",
+                symbolism: "Purple void represents the space between what is and what must never be",
+                story: "Void races not for glory or prize money, but because someone must guard the thin places where reality grows weak. Each lap seals another crack in the universe, each victory postpones an apocalypse that spectators will never know they avoided.",
+                odds: "8:1",
+                skill: 0.65
+            }
+        ];
+
         class RacingGame {
             constructor() {
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.setupCanvas();
                 
-                this.gameState = 'menu';
+                this.gameState = 'betting'; // betting, racing, finished
                 this.frameCount = 0;
                 this.startTime = 0;
+                this.raceNumber = 1;
                 
                 this.cars = [];
                 this.track = this.generateTrack();
                 
-                this.input = {
-                    left: false,
-                    right: false,
-                    gas: false,
-                    brake: false,
-                    steerAngle: 0 // For analog steering
-                };
+                this.playerMoney = 1000;
+                this.currentBet = null;
+                this.betAmount = 0;
+                this.selectedTeam = null;
                 
-                this.setupControls();
+                this.setupUI();
                 this.setupCars();
+                this.updateTeamsList();
                 this.gameLoop();
             }
             
             setupCanvas() {
-                const container = document.getElementById('gameContainer');
-                const maxWidth = Math.min(window.innerWidth, 800);
-                const maxHeight = Math.min(window.innerHeight, 600);
-                
-                this.canvas.width = maxWidth;
-                this.canvas.height = maxHeight;
-                
-                container.style.width = maxWidth + 'px';
-                container.style.height = maxHeight + 'px';
+                this.canvas.width = 800;
+                this.canvas.height = 600;
             }
             
             generateTrack() {
@@ -316,344 +487,174 @@
             }
             
             setupCars() {
-                const colors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff', '#ffa544', '#a544ff'];
                 const startRadius = (this.track.radiusOuter + this.track.radiusInner) / 2;
+                this.cars = [];
                 
-                for (let i = 0; i < 8; i++) {
+                teams.forEach((team, i) => {
                     const startAngle = -Math.PI / 2 + (i * 0.1);
                     const car = {
-                        id: i,
+                        id: team.id,
+                        team: team,
                         x: this.track.centerX + Math.cos(startAngle) * startRadius,
                         y: this.track.centerY + Math.sin(startAngle) * startRadius,
                         vx: 0,
                         vy: 0,
                         angle: startAngle + Math.PI / 2,
                         speed: 0,
-                        maxSpeed: i === 0 ? 5 : 4 + Math.random(),
-                        acceleration: 0.3,
-                        friction: 0.95,
-                        turnSpeed: 0.05,
-                        color: colors[i],
-                        isPlayer: i === 0,
+                        maxSpeed: 3 + team.skill * 2 + Math.random() * 0.5,
+                        acceleration: 0.2 + team.skill * 0.1,
+                        friction: 0.98,
+                        turnSpeed: 0.04 + team.skill * 0.02,
+                        color: team.color,
                         lap: 1,
                         checkpointIndex: 0,
                         position: i + 1,
                         onTrack: true,
-                        aiTarget: 0
+                        aiTarget: 0,
+                        raceTime: 0
                     };
                     this.cars.push(car);
-                }
+                });
             }
             
-            setupControls() {
-                const leftBtn = document.getElementById('leftBtn');
-                const rightBtn = document.getElementById('rightBtn');
-                const gasBtn = document.getElementById('gasBtn');
-                const brakeBtn = document.getElementById('brakeBtn');
-                const steeringWheel = document.getElementById('steeringWheel');
-                const steeringIndicator = document.querySelector('.steering-indicator');
-                const startBtn = document.getElementById('startBtn');
-                
-                // Enhanced touch controls with visual feedback
-                const addTouchControls = (element, key) => {
-                    element.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        this.input[key] = true;
-                        element.classList.add('pressed');
-                        this.hapticFeedback();
-                    });
-                    
-                    element.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        this.input[key] = false;
-                        element.classList.remove('pressed');
-                    });
-                    
-                    element.addEventListener('touchcancel', (e) => {
-                        e.preventDefault();
-                        this.input[key] = false;
-                        element.classList.remove('pressed');
-                    });
-                    
-                    // Mouse controls for desktop
-                    element.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
-                        this.input[key] = true;
-                        element.classList.add('pressed');
-                    });
-                    
-                    element.addEventListener('mouseup', (e) => {
-                        e.preventDefault();
-                        this.input[key] = false;
-                        element.classList.remove('pressed');
-                    });
-                    
-                    element.addEventListener('mouseleave', (e) => {
-                        this.input[key] = false;
-                        element.classList.remove('pressed');
-                    });
-                };
-                
-                // Add enhanced controls
-                addTouchControls(leftBtn, 'left');
-                addTouchControls(rightBtn, 'right');
-                addTouchControls(gasBtn, 'gas');
-                addTouchControls(brakeBtn, 'brake');
-                
-                // Steering wheel analog control
-                let isDragging = false;
-                let startAngle = 0;
-                
-                const getAngleFromEvent = (e) => {
-                    const rect = steeringWheel.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-                    
-                    let clientX, clientY;
-                    if (e.touches && e.touches[0]) {
-                        clientX = e.touches[0].clientX;
-                        clientY = e.touches[0].clientY;
-                    } else {
-                        clientX = e.clientX;
-                        clientY = e.clientY;
-                    }
-                    
-                    return Math.atan2(clientY - centerY, clientX - centerX);
-                };
-                
-                const startSteering = (e) => {
-                    e.preventDefault();
-                    isDragging = true;
-                    startAngle = getAngleFromEvent(e);
-                    this.hapticFeedback();
-                };
-                
-                const updateSteering = (e) => {
-                    if (!isDragging) return;
-                    e.preventDefault();
-                    
-                    const currentAngle = getAngleFromEvent(e);
-                    let angleDiff = currentAngle - startAngle;
-                    
-                    // Normalize angle difference
-                    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-                    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-                    
-                    // Convert to steering input (-1 to 1)
-                    this.input.steerAngle = Math.max(-1, Math.min(1, angleDiff / (Math.PI / 3)));
-                    
-                    // Update visual indicator
-                    const rotation = this.input.steerAngle * 45; // Max 45 degrees rotation
-                    steeringIndicator.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
-                    steeringWheel.style.transform = `rotate(${rotation}deg)`;
-                };
-                
-                const endSteering = (e) => {
-                    if (e) e.preventDefault();
-                    isDragging = false;
-                    this.input.steerAngle = 0;
-                    
-                    // Reset visual state
-                    steeringIndicator.style.transform = 'translateX(-50%) rotate(0deg)';
-                    steeringWheel.style.transform = 'rotate(0deg)';
-                };
-                
-                // Touch events for steering wheel
-                steeringWheel.addEventListener('touchstart', startSteering);
-                document.addEventListener('touchmove', updateSteering);
-                document.addEventListener('touchend', endSteering);
-                
-                // Mouse events for steering wheel
-                steeringWheel.addEventListener('mousedown', startSteering);
-                document.addEventListener('mousemove', updateSteering);
-                document.addEventListener('mouseup', endSteering);
-                
-                // Enhanced keyboard controls
-                document.addEventListener('keydown', (e) => {
-                    switch(e.key) {
-                        case 'ArrowLeft':
-                        case 'a':
-                        case 'A':
-                            this.input.left = true;
-                            leftBtn.classList.add('pressed');
-                            break;
-                        case 'ArrowRight':
-                        case 'd':
-                        case 'D':
-                            this.input.right = true;
-                            rightBtn.classList.add('pressed');
-                            break;
-                        case 'ArrowUp':
-                        case 'w':
-                        case 'W':
-                            this.input.gas = true;
-                            gasBtn.classList.add('pressed');
-                            break;
-                        case 'ArrowDown':
-                        case 's':
-                        case 'S':
-                            this.input.brake = true;
-                            brakeBtn.classList.add('pressed');
-                            break;
-                        case 'Enter':
-                        case ' ':
-                            if (this.gameState === 'menu') {
-                                this.startRace();
-                            }
-                            break;
+            setupUI() {
+                document.getElementById('startRaceBtn').addEventListener('click', () => {
+                    if (this.gameState === 'betting') {
+                        this.startRace();
                     }
                 });
                 
-                document.addEventListener('keyup', (e) => {
-                    switch(e.key) {
-                        case 'ArrowLeft':
-                        case 'a':
-                        case 'A':
-                            this.input.left = false;
-                            leftBtn.classList.remove('pressed');
-                            break;
-                        case 'ArrowRight':
-                        case 'd':
-                        case 'D':
-                            this.input.right = false;
-                            rightBtn.classList.remove('pressed');
-                            break;
-                        case 'ArrowUp':
-                        case 'w':
-                        case 'W':
-                            this.input.gas = false;
-                            gasBtn.classList.remove('pressed');
-                            break;
-                        case 'ArrowDown':
-                        case 's':
-                        case 'S':
-                            this.input.brake = false;
-                            brakeBtn.classList.remove('pressed');
-                            break;
-                    }
+                document.getElementById('placeBetBtn').addEventListener('click', () => {
+                    this.placeBet();
                 });
                 
-                // Fixed start button event handlers
-                const startRaceHandler = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Start button clicked!'); // Debug log
-                    this.startRace();
-                };
-                
-                // Multiple event listeners to ensure it works
-                startBtn.addEventListener('click', startRaceHandler);
-                startBtn.addEventListener('touchend', startRaceHandler);
-                startBtn.addEventListener('mouseup', startRaceHandler);
+                document.getElementById('betAmount').addEventListener('input', (e) => {
+                    this.updateBetButton();
+                });
             }
             
-            // Haptic feedback for mobile devices
-            hapticFeedback() {
-                if (navigator.vibrate) {
-                    navigator.vibrate(50);
+            updateTeamsList() {
+                const teamsList = document.getElementById('teamsList');
+                teamsList.innerHTML = '';
+                
+                teams.forEach(team => {
+                    const teamCard = document.createElement('div');
+                    teamCard.className = 'team-card';
+                    teamCard.style.borderLeftColor = team.color;
+                    teamCard.onclick = () => this.selectTeam(team);
+                    teamCard.ondblclick = () => this.showStory(team);
+                    
+                    teamCard.innerHTML = `
+                        <div class="team-name" style="color: ${team.color}">${team.name}</div>
+                        <div class="team-story">${team.story}</div>
+                        <div class="team-odds">Odds: ${team.odds} | Skill: ${Math.round(team.skill * 100)}%</div>
+                        <div style="font-size: 10px; color: #888; margin-top: 5px;">Double-click for full story</div>
+                    `;
+                    
+                    teamsList.appendChild(teamCard);
+                });
+                
+                this.updateBetButton();
+            }
+            
+            selectTeam(team) {
+                this.selectedTeam = team;
+                
+                // Update visual selection
+                document.querySelectorAll('.team-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                event.target.closest('.team-card').classList.add('selected');
+                
+                this.updateBetButton();
+            }
+            
+            updateBetButton() {
+                const betBtn = document.getElementById('placeBetBtn');
+                const betAmount = parseInt(document.getElementById('betAmount').value) || 0;
+                
+                if (this.selectedTeam && betAmount >= 10 && betAmount <= this.playerMoney && !this.currentBet) {
+                    betBtn.disabled = false;
+                    betBtn.textContent = `Bet $${betAmount} on ${this.selectedTeam.name}`;
+                } else if (this.currentBet) {
+                    betBtn.disabled = true;
+                    betBtn.textContent = 'Bet Placed';
+                } else {
+                    betBtn.disabled = true;
+                    betBtn.textContent = 'Select Team & Amount';
                 }
+            }
+            
+            placeBet() {
+                if (!this.selectedTeam) return;
+                
+                const betAmount = parseInt(document.getElementById('betAmount').value) || 0;
+                if (betAmount < 10 || betAmount > this.playerMoney) return;
+                
+                this.currentBet = {
+                    team: this.selectedTeam,
+                    amount: betAmount
+                };
+                
+                this.playerMoney -= betAmount;
+                document.getElementById('money').textContent = this.playerMoney;
+                document.getElementById('currentBet').innerHTML = `
+                    🎯 Bet: $${betAmount} on <span style="color: ${this.selectedTeam.color}">${this.selectedTeam.name}</span>
+                `;
+                
+                this.updateBetButton();
+            }
+            
+            showStory(team) {
+                const storyContent = document.getElementById('storyContent');
+                storyContent.innerHTML = `
+                    <h2 style="color: ${team.color}; text-align: center; margin-bottom: 20px;">${team.name}</h2>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div><strong>Genre:</strong> ${team.genre}</div>
+                        <div><strong>Tone:</strong> ${team.tone}</div>
+                        <div><strong>Setting:</strong> ${team.setting}</div>
+                        <div><strong>Style:</strong> ${team.style}</div>
+                        <div><strong>Point of View:</strong> ${team.pov}</div>
+                        <div><strong>Theme:</strong> ${team.theme}</div>
+                    </div>
+                    
+                    <h3>Plot</h3>
+                    <p style="margin-bottom: 15px;">${team.plot}</p>
+                    
+                    <h3>Characters</h3>
+                    <p style="margin-bottom: 15px;">${team.characters}</p>
+                    
+                    <h3>Conflict</h3>
+                    <p style="margin-bottom: 15px;">${team.conflict}</p>
+                    
+                    <h3>Dialogue Style</h3>
+                    <p style="margin-bottom: 15px;">${team.dialogue}</p>
+                    
+                    <h3>Symbolism</h3>
+                    <p style="margin-bottom: 15px;">${team.symbolism}</p>
+                    
+                    <h3>Team Story</h3>
+                    <p style="background: rgba(${team.color.slice(1)}, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid ${team.color};">
+                        ${team.story}
+                    </p>
+                `;
+                
+                document.getElementById('storyDetails').style.display = 'block';
             }
             
             startRace() {
-                console.log('Starting race!'); // Debug log
                 this.gameState = 'racing';
                 this.startTime = Date.now();
-                const startScreen = document.getElementById('startScreen');
-                if (startScreen) {
-                    startScreen.style.display = 'none';
-                }
-            }
-            
-            updateCar(car) {
-                if (car.isPlayer) {
-                    this.updatePlayerCar(car);
-                } else {
-                    this.updateAICar(car);
-                }
+                document.getElementById('raceStatus').textContent = 'Racing!';
                 
-                // Physics
-                car.x += car.vx;
-                car.y += car.vy;
-                
-                // Check if on track
-                const distFromCenter = Math.sqrt(
-                    Math.pow(car.x - this.track.centerX, 2) + 
-                    Math.pow(car.y - this.track.centerY, 2)
-                );
-                
-                car.onTrack = distFromCenter <= this.track.radiusOuter && distFromCenter >= this.track.radiusInner;
-                
-                // Off-track penalty with visual feedback
-                if (!car.onTrack && car.isPlayer) {
-                    car.vx *= 0.8;
-                    car.vy *= 0.8;
-                    car.maxSpeed = 3;
-                    
-                    // Add screen shake effect
-                    if (this.frameCount % 10 === 0) {
-                        const container = document.getElementById('gameContainer');
-                        if (container) {
-                            container.classList.add('vibrating');
-                            setTimeout(() => {
-                                container.classList.remove('vibrating');
-                            }, 100);
-                        }
-                    }
-                } else if (!car.onTrack) {
-                    car.vx *= 0.8;
-                    car.vy *= 0.8;
-                    car.maxSpeed = 2;
-                } else {
-                    car.maxSpeed = car.isPlayer ? 5 : 4 + Math.random();
-                }
-                
-                // Update checkpoint progress
-                this.updateCheckpoints(car);
-                
-                // Update UI for player
-                if (car.isPlayer) {
-                    const speedometer = document.getElementById('speedometer');
-                    const lapCount = document.getElementById('lapCount');
-                    if (speedometer) speedometer.textContent = Math.round(car.speed * 20);
-                    if (lapCount) lapCount.textContent = `${car.lap}/3`;
-                }
-            }
-            
-            updatePlayerCar(car) {
-                // Enhanced steering with analog support
-                let steerInput = 0;
-                
-                if (this.input.steerAngle !== 0) {
-                    // Use analog steering from wheel
-                    steerInput = this.input.steerAngle;
-                } else {
-                    // Use digital steering from buttons
-                    if (this.input.left) steerInput -= 1;
-                    if (this.input.right) steerInput += 1;
-                }
-                
-                // Apply steering with speed-dependent sensitivity
-                const steerSensitivity = Math.max(0.5, 1 - car.speed / car.maxSpeed * 0.3);
-                car.angle += steerInput * car.turnSpeed * steerSensitivity;
-                
-                // Enhanced acceleration with progressive response
-                if (this.input.gas) {
-                    const accelRate = car.onTrack ? car.acceleration : car.acceleration * 0.7;
-                    car.speed = Math.min(car.speed + accelRate, car.maxSpeed);
-                } else if (this.input.brake) {
-                    car.speed = Math.max(car.speed - car.acceleration * 2, -car.maxSpeed / 2);
-                } else {
-                    // Improved natural deceleration
-                    car.speed *= car.onTrack ? car.friction : car.friction * 0.9;
-                }
-                
-                // Update velocity
-                car.vx = Math.cos(car.angle) * car.speed;
-                car.vy = Math.sin(car.angle) * car.speed;
+                // Reset car positions
+                this.setupCars();
             }
             
             updateAICar(car) {
-                // Simple AI: follow the track
+                // Enhanced AI with team personality
+                const team = car.team;
                 const targetCheckpoint = this.track.checkpoints[car.aiTarget];
                 const dx = targetCheckpoint.x - car.x;
                 const dy = targetCheckpoint.y - car.y;
@@ -661,180 +662,4 @@
                 
                 // Check if reached target checkpoint
                 if (Math.sqrt(dx * dx + dy * dy) < 40) {
-                    car.aiTarget = (car.aiTarget + 1) % this.track.checkpoints.length;
-                }
-                
-                // Steer towards target
-                let angleDiff = targetAngle - car.angle;
-                while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-                while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-                
-                if (Math.abs(angleDiff) > 0.1) {
-                    car.angle += Math.sign(angleDiff) * car.turnSpeed;
-                }
-                
-                // AI always accelerates (simple AI)
-                car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
-                
-                // Update velocity
-                car.vx = Math.cos(car.angle) * car.speed;
-                car.vy = Math.sin(car.angle) * car.speed;
-            }
-            
-            updateCheckpoints(car) {
-                const checkpoint = this.track.checkpoints[car.checkpointIndex];
-                const dx = car.x - checkpoint.x;
-                const dy = car.y - checkpoint.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < 30) {
-                    car.checkpointIndex++;
-                    if (car.checkpointIndex >= this.track.checkpoints.length) {
-                        car.checkpointIndex = 0;
-                        car.lap++;
-                    }
-                }
-            }
-            
-            updatePositions() {
-                // Sort cars by lap and checkpoint progress
-                this.cars.sort((a, b) => {
-                    if (a.lap !== b.lap) return b.lap - a.lap;
-                    return b.checkpointIndex - a.checkpointIndex;
-                });
-                
-                // Update positions
-                this.cars.forEach((car, index) => {
-                    car.position = index + 1;
-                });
-                
-                // Update leaderboard display
-                const positionsDiv = document.getElementById('positions');
-                if (positionsDiv) {
-                    positionsDiv.innerHTML = this.cars.map(car => 
-                        `<div style="color: ${car.color}">${car.position}. ${car.isPlayer ? 'YOU' : 'AI ' + car.id}</div>`
-                    ).join('');
-                }
-            }
-            
-            drawTrack() {
-                this.ctx.fillStyle = '#2a5a2a';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Draw track (gray ring)
-                this.ctx.fillStyle = '#666';
-                this.ctx.beginPath();
-                this.ctx.arc(this.track.centerX, this.track.centerY, this.track.radiusOuter, 0, Math.PI * 2);
-                this.ctx.arc(this.track.centerX, this.track.centerY, this.track.radiusInner, 0, Math.PI * 2, true);
-                this.ctx.fill();
-                
-                // Draw start/finish line
-                this.ctx.strokeStyle = '#fff';
-                this.ctx.lineWidth = 3;
-                this.ctx.beginPath();
-                this.ctx.moveTo(this.track.centerX, this.track.centerY - this.track.radiusOuter);
-                this.ctx.lineTo(this.track.centerX, this.track.centerY - this.track.radiusInner);
-                this.ctx.stroke();
-            }
-            
-            drawCar(car) {
-                this.ctx.save();
-                this.ctx.translate(car.x, car.y);
-                this.ctx.rotate(car.angle);
-                
-                // Car body
-                this.ctx.fillStyle = car.color;
-                this.ctx.fillRect(-8, -4, 16, 8);
-                
-                // Car outline
-                this.ctx.strokeStyle = '#000';
-                this.ctx.lineWidth = 1;
-                this.ctx.strokeRect(-8, -4, 16, 8);
-                
-                // Direction indicator
-                this.ctx.fillStyle = '#fff';
-                this.ctx.fillRect(6, -2, 4, 4);
-                
-                this.ctx.restore();
-                
-                // Position number above car
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = '12px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(car.position, car.x, car.y - 15);
-            }
-            
-            updateTimer() {
-                if (this.gameState === 'racing') {
-                    const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
-                    const minutes = Math.floor(elapsed / 60);
-                    const seconds = elapsed % 60;
-                    const timer = document.getElementById('timer');
-                    if (timer) {
-                        timer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                    }
-                }
-            }
-            
-            update() {
-                if (this.gameState === 'racing') {
-                    this.cars.forEach(car => this.updateCar(car));
-                    this.updatePositions();
-                    this.updateTimer();
-                    
-                    // Check for race finish
-                    if (this.cars[0].lap > 3) {
-                        this.gameState = 'finished';
-                    }
-                }
-            }
-            
-            draw() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                this.drawTrack();
-                this.cars.forEach(car => this.drawCar(car));
-                
-                if (this.gameState === 'finished') {
-                    this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                    
-                    this.ctx.fillStyle = '#fff';
-                    this.ctx.font = '24px Arial';
-                    this.ctx.textAlign = 'center';
-                    this.ctx.fillText('Race Finished!', this.canvas.width / 2, this.canvas.height / 2);
-                    
-                    const playerCar = this.cars.find(car => car.isPlayer);
-                    this.ctx.fillText(`You finished ${playerCar.position}${this.getOrdinalSuffix(playerCar.position)}!`, 
-                        this.canvas.width / 2, this.canvas.height / 2 + 40);
-                }
-            }
-            
-            getOrdinalSuffix(num) {
-                const suffix = ['th', 'st', 'nd', 'rd'];
-                const value = num % 100;
-                return suffix[(value - 20) % 10] || suffix[value] || suffix[0];
-            }
-            
-            gameLoop() {
-                this.update();
-                this.draw();
-                this.frameCount++;
-                requestAnimationFrame(() => this.gameLoop());
-            }
-        }
-        
-        // Start the game when page loads
-        window.addEventListener('load', () => {
-            new RacingGame();
-        });
-        
-        // Handle orientation changes
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => {
-                location.reload();
-            }, 100);
-        });
-    </script>
-</body>
-</html>
+                    car.aiTarget = (car.
