@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Championship Racing Circuit - Text Edition</title>
+    <title>International Racing Championship</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
 
         body {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            font-family: 'Courier New', monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
             color: white;
             min-height: 100vh;
@@ -44,8 +44,8 @@
             border: 2px solid #333;
             border-radius: 10px;
             padding: 20px;
-            min-height: 400px;
-            font-family: 'Courier New', monospace;
+            min-height: 450px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 14px;
             line-height: 1.6;
         }
@@ -64,6 +64,15 @@
             padding: 15px;
             margin: 10px 0;
             border-radius: 5px;
+        }
+
+        #raceProgress {
+            background: rgba(0,100,0,0.2);
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
         }
 
         #sidePanel {
@@ -237,6 +246,26 @@
         .position-down { color: #f44336; }
         .position-same { color: #FFD700; }
 
+        .progress-bar {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
         #raceResults {
             position: fixed;
             top: 50%;
@@ -286,26 +315,6 @@
             font-size: 16px;
         }
 
-        .race-event {
-            background: rgba(255,100,100,0.2);
-            border: 1px solid #ff6666;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 10px 0;
-            font-style: italic;
-        }
-
-        .lap-header {
-            background: rgba(255,215,0,0.2);
-            border: 1px solid #FFD700;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 15px 0 10px 0;
-            text-align: center;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
         @media (max-width: 1200px) {
             #gameContainer {
                 grid-template-columns: 1fr;
@@ -319,16 +328,24 @@
         <div id="mainContent">
             <div id="raceDisplay">
                 <div id="trackConditions">
-                    <h3>🏁 CHAMPIONSHIP RACING CIRCUIT 🏁</h3>
-                    <p id="trackInfo">Track: Silverstone International Circuit | Length: 5.891 km</p>
-                    <p id="weatherInfo">Weather: Partly Cloudy | Temperature: 22°C | Track: Dry</p>
-                    <p id="raceInfo">Race Distance: 3 Laps | Field: 8 Drivers</p>
+                    <h3>🏁 INTERNATIONAL RACING CHAMPIONSHIP 🏁</h3>
+                    <p id="trackInfo">Circuit: Silverstone International | Length: 5.891 km | 20 Laps</p>
+                    <p id="weatherInfo">Weather: Partly Cloudy | Air: 22°C | Track: 28°C | Grip: High</p>
+                    <p id="raceInfo">Race Duration: ~5 minutes | Field: 8 Professional Drivers</p>
+                </div>
+                
+                <div id="raceProgress">
+                    <h4>⏱️ Race Progress</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%;">0% Complete</div>
+                    </div>
+                    <p id="progressText">Race will begin shortly - Place your bets!</p>
                 </div>
                 
                 <div id="raceNarrative">
-                    <h4>📢 Race Control</h4>
-                    <p>Welcome to the Championship Racing Circuit! The drivers are taking their positions on the grid. The atmosphere is electric as teams make final preparations for what promises to be an thrilling race.</p>
-                    <p><strong>Place your bets and prepare for the green flag!</strong></p>
+                    <h4>📢 Race Director</h4>
+                    <p>Welcome to the International Racing Championship! The world's top drivers are on the grid, engines warming up. The championship battle continues with today's 20-lap sprint race at the legendary Silverstone circuit.</p>
+                    <p><strong>Drivers are ready - place your bets before the lights go out!</strong></p>
                 </div>
                 
                 <div id="liveRaceText"></div>
@@ -356,14 +373,14 @@
                 <div id="betControls">
                     <input type="number" id="betAmount" placeholder="Bet Amount" min="10" max="1000" value="50">
                     <button id="placeBetBtn" disabled>Place Bet</button>
-                    <button id="startRaceBtn">🏁 START RACE!</button>
+                    <button id="startRaceBtn">🚦 LIGHTS OUT!</button>
                 </div>
                 
                 <div id="currentBet" style="margin-top: 10px; font-size: 12px; color: #FFD700;"></div>
             </div>
 
             <div id="leaderboard">
-                <div style="font-weight: bold; margin-bottom: 15px; font-size: 16px;">🏆 Live Positions</div>
+                <div style="font-weight: bold; margin-bottom: 15px; font-size: 16px;">🏆 Live Standings</div>
                 <div id="positions"></div>
             </div>
 
@@ -387,119 +404,148 @@
     </div>
 
     <script>
-        // Enhanced team stories and data
+        // Realistic racing teams with grounded backstories
         const teams = [
             {
                 id: 0,
-                name: "Crimson Shadows",
+                name: "Velocity Motorsport",
                 color: "#ff4444",
-                genre: "Dark Fantasy",
-                driver: "Raven",
-                car: "Shadow Wraith MK-VII",
-                team_description: "Former street racers seeking redemption",
-                story: "Born from the ashes of the Great Circuit Wars, Crimson Shadows emerged when underground racer 'Raven' discovered their illegal winnings were being used to fund a children's shelter. Now they race to protect what matters most.",
-                racing_style: "Aggressive overtaking with calculated risks",
-                signature_move: "The Shadow Pass - diving into corners at impossible angles",
+                nationality: "British",
+                driver: "James Mitchell",
+                car: "VM-23 Hybrid",
+                team_description: "Former F1 mechanics turned independent team",
+                story: "Founded by ex-McLaren chief mechanic David Velocity after leaving Formula 1. The team started in British touring cars and worked their way up through sheer determination and innovative engineering solutions.",
+                racing_style: "Aggressive overtaking with precise technical execution",
+                signature_move: "Late-braking dive bombs into turn 1",
+                background: "Started in garage in Oxfordshire, now competing internationally",
+                sponsor: "RedShift Energy Drinks",
+                championships: "3x British Touring Car podiums",
                 odds: "4:1",
                 skill: 0.75,
                 personality: "aggressive"
             },
             {
                 id: 1,
-                name: "Neon Velocity",
+                name: "Apex Racing Team",
                 color: "#44ff44",
-                genre: "Cyberpunk",
-                driver: "Zap",
-                car: "Photon Racer X-9",
-                team_description: "Neural-linked racing with illegal tech mods",
-                story: "In the neon-soaked streets of Neo-Tokyo, Zap races with illegal neural mods that sync directly with their vehicle. Every turn is calculated by quantum processors, every move predicted by AI.",
-                racing_style: "Precision driving with technological assistance",
-                signature_move: "The Digital Drift - perfect cornering through computer prediction",
+                nationality: "German",
+                driver: "Klaus Weber",
+                car: "ART-24 Turbo",
+                team_description: "Precision German engineering meets racing passion",
+                story: "Klaus Weber, former Porsche test driver, founded Apex Racing after retiring from the WEC. The team focuses on methodical preparation and data-driven race strategies, typical of German engineering excellence.",
+                racing_style: "Technical precision with calculated risk-taking",
+                signature_move: "Perfect racing lines through technical sections",
+                background: "Based in Stuttgart with Porsche heritage",
+                sponsor: "TechFlow Automotive Solutions",
+                championships: "2x Nürburgring 24h class winner",
                 odds: "3:1",
                 skill: 0.80,
                 personality: "technical"
             },
             {
                 id: 2,
-                name: "Azure Lightning",
+                name: "Thunder Bay Racing",
                 color: "#4444ff",
-                genre: "Epic Adventure",
-                driver: "Storm",
-                car: "Sky Rider Tempest",
-                team_description: "Noble sky pirates racing for honor",
-                story: "Captain Storm once commanded the fastest cloudship in the Seven Skies until politics grounded their fleet. Now they race land-bound vehicles, but their heart still soars with the clouds.",
-                racing_style: "Honorable racing with tactical prowess",
-                signature_move: "The Storm Surge - building speed through perfect rhythm",
+                nationality: "Canadian",
+                driver: "Sarah Thompson",
+                car: "TBR-23 Arctic",
+                team_description: "Canadian team specializing in all-weather racing",
+                story: "Sarah Thompson started racing on frozen lakes in northern Canada. Thunder Bay Racing brings that harsh-weather experience to international circuits, excelling in difficult conditions where others struggle.",
+                racing_style: "Consistent pace with exceptional wet weather skills",
+                signature_move: "Maintaining speed in adverse conditions",
+                background: "Founded in Thunder Bay, Ontario in 2019",
+                sponsor: "Maple Leaf Automotive",
+                championships: "Canadian Road Racing champion",
                 odds: "5:1",
                 skill: 0.70,
                 personality: "steady"
             },
             {
                 id: 3,
-                name: "Golden Eagles",
+                name: "Phoenix Racing",
                 color: "#ffff44",
-                driver: "Phoenix",
-                car: "Rising Sun GT",
-                team_description: "Small-town underdogs with big dreams",
-                story: "From a small farming town, Phoenix learned to race on dusty back roads with a hand-me-down vehicle. Now they're proving that heart matters more than horsepower.",
-                racing_style: "Determined underdog with surprising bursts of speed",
-                signature_move: "The Phoenix Rise - gaining strength as the race progresses",
+                nationality: "American",
+                driver: "Miguel Rodriguez",
+                car: "PHX-24 Desert",
+                team_description: "Underdog team from Arizona with big dreams",
+                story: "Miguel Rodriguez learned to race on desert dirt tracks near Phoenix. His family-run team operates on a shoestring budget but makes up for it with heart, innovation, and an never-give-up attitude that embodies the American dream.",
+                racing_style: "Underdog determination with surprising late-race pace",
+                signature_move: "Finding speed when it matters most",
+                background: "Family-owned team from Phoenix, Arizona",
+                sponsor: "Desert Storm Auto Parts",
+                championships: "Multiple regional desert racing titles",
                 odds: "6:1",
                 skill: 0.65,
                 personality: "underdog"
             },
             {
                 id: 4,
-                name: "Violet Storm",
+                name: "Sakura Motorsport",
                 color: "#ff44ff",
-                driver: "Mystic",
-                car: "Ethereal Phantom",
-                team_description: "Mystical racers who see beyond the track",
-                story: "Legend speaks of a racer who sees the wind before it blows and knows the track before it's built. Mystic races between dimensions, where speed transcends physics.",
-                racing_style: "Unpredictable with moments of supernatural precision",
-                signature_move: "The Void Walk - disappearing and reappearing ahead",
+                nationality: "Japanese",
+                driver: "Yuki Tanaka",
+                car: "SKR-24 Zen",
+                team_description: "Japanese precision meets traditional racing philosophy",
+                story: "Yuki Tanaka comes from a family of samurai tradition, applying centuries-old principles of discipline and precision to modern racing. Sakura Motorsport represents the harmony between traditional Japanese values and cutting-edge technology.",
+                racing_style: "Smooth, flowing style with perfect car control",
+                signature_move: "Seamless, graceful overtakes through rhythm",
+                background: "Based in Suzuka with deep racing heritage",
+                sponsor: "Rising Sun Technologies",
+                championships: "Super GT series podium finisher",
                 odds: "7:1",
                 skill: 0.60,
                 personality: "mystical"
             },
             {
                 id: 5,
-                name: "Aqua Titans",
+                name: "Nordic Thunder",
                 color: "#44ffff",
-                driver: "Tide",
-                car: "Ocean's Fury",
-                team_description: "Environmental warriors racing for the planet",
-                story: "Dr. Tide left their research lab when they realized racing could raise more awareness for ocean conservation than any scientific paper ever could.",
-                racing_style: "Smooth and flowing like water currents",
-                signature_move: "The Tidal Wave - overwhelming opponents with fluid motion",
+                nationality: "Finnish",
+                driver: "Mikko Virtanen",
+                car: "NT-24 Ice",
+                team_description: "Finnish rally expertise adapted for circuit racing",
+                story: "Mikko Virtanen, son of a legendary rally driver, brings Nordic rally techniques to circuit racing. His smooth, flowing style was developed on icy Finnish forest roads where precision means survival.",
+                racing_style: "Smooth, efficient driving with rally-bred car control",
+                signature_move: "Flowing through corners like water over ice",
+                background: "Rally heritage from Finnish forests",
+                sponsor: "Arctic Performance Solutions",
+                championships: "Multiple Finnish rally championships",
                 odds: "5:1",
                 skill: 0.72,
                 personality: "smooth"
             },
             {
                 id: 6,
-                name: "Solar Flare",
+                name: "Outback Racing",
                 color: "#ffa544",
-                driver: "Nova",
-                car: "Stellar Interceptor",
-                team_description: "Interplanetary couriers racing against time",
-                story: "When the outer colonies stopped communicating, Nova volunteered for the most dangerous job in the galaxy - racing through asteroid fields to maintain contact.",
-                racing_style: "High-risk, high-reward space pilot techniques",
-                signature_move: "The Solar Burst - explosive acceleration through danger",
+                nationality: "Australian",
+                driver: "Jake Morrison",
+                car: "OR-24 Wildfire",
+                team_description: "Australian endurance specialists with no fear",
+                story: "Jake Morrison grew up racing V8 Supercars in the Australian outback. Known for taking risks that others won't, he brings that fearless Aussie spirit to every race, often pulling off moves that shouldn't be possible.",
+                racing_style: "High-risk, high-reward with exceptional car control",
+                signature_move: "Impossible overtakes that somehow work",
+                background: "V8 Supercar heritage from Mount Panorama",
+                sponsor: "Southern Cross Mining",
+                championships: "Bathurst 1000 podium finisher",
                 odds: "4:1",
                 skill: 0.78,
                 personality: "risky"
             },
             {
                 id: 7,
-                name: "Cosmic Void",
+                name: "Wildcard Racing",
                 color: "#a544ff",
-                driver: "Void",
-                car: "Reality Shifter",
-                team_description: "Guardians racing to protect dimensional barriers",
-                story: "Void races not for glory or prize money, but because someone must guard the thin places where reality grows weak. Each race is a battle against cosmic horror.",
-                racing_style: "Erratic but purposeful, defying conventional racing logic",
-                signature_move: "The Void Shift - reality-bending position changes",
+                nationality: "Italian",
+                driver: "Antonio Rossi",
+                car: "WC-24 Chaos",
+                team_description: "Unpredictable Italian passion meets racing artistry",
+                story: "Antonio Rossi is known throughout the paddock as completely unpredictable. Some days he's brilliant, other days erratic. His emotional Italian racing style means you never know which Antonio will show up, making him the ultimate wildcard.",
+                racing_style: "Emotionally driven with moments of pure brilliance",
+                signature_move: "Unpredictable moves that confuse competitors",
+                background: "Street racing roots from Milan",
+                sponsor: "Espresso Velocity Café",
+                championships: "Multiple amateur karting titles",
                 odds: "8:1",
                 skill: 0.55,
                 personality: "erratic"
@@ -507,40 +553,41 @@
         ];
 
         const raceEvents = [
-            "takes the racing line perfectly through the chicane",
-            "makes a daring overtake on the outside",
-            "hits their braking point perfectly",
-            "carries more speed through the corner",
-            "finds extra grip on the racing line",
-            "makes a strategic defensive move",
-            "gains a slipstream advantage",
-            "nails the apex with surgical precision",
-            "uses DRS to gain crucial speed",
-            "makes a late-braking maneuver",
-            "finds pace in the technical section",
-            "maintains momentum through the esses",
-            "executes a perfectly timed overtake",
-            "defends their position expertly",
-            "loses grip on the exit",
-            "runs slightly wide",
-            "has a moment of oversteer",
-            "fights back after a poor start",
-            "struggles with tire degradation",
-            "makes a small mistake but recovers quickly"
+            "nails the braking point perfectly",
+            "carries extra speed through the chicane",
+            "finds the ideal racing line",
+            "makes a clinical overtake on the straight",
+            "defends position with smart positioning",
+            "gains time in the technical sector",
+            "loses grip slightly on corner exit",
+            "makes a small mistake but recovers",
+            "locks up slightly under braking",
+            "runs wide but keeps position",
+            "sets a personal best sector time",
+            "shows great racecraft under pressure",
+            "maximizes straight-line speed",
+            "demonstrates excellent tire management",
+            "finds pace when needed most",
+            "struggles with handling balance",
+            "adapts driving style to conditions",
+            "executes perfect defensive driving",
+            "capitalizes on slipstream opportunity",
+            "shows championship-level composure"
         ];
 
-        class TextRacingGame {
+        class RealisticRacingGame {
             constructor() {
                 this.gameState = 'betting'; // betting, racing, finished
                 this.startTime = 0;
                 this.raceNumber = 1;
-                this.raceDistance = 3; // 3 laps
-                this.currentLap = 1;
+                this.totalRaceDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
+                this.totalLaps = 20;
+                this.currentLap = 0;
+                this.raceProgress = 0;
                 
                 this.drivers = [];
                 this.commentary = [];
                 this.lastCommentaryTime = 0;
-                this.raceEventTimer = 0;
                 
                 this.playerMoney = 1000;
                 this.currentBet = null;
@@ -549,7 +596,7 @@
                 this.setupUI();
                 this.setupDrivers();
                 this.updateTeamsList();
-                this.addCommentary("🏁 Welcome to the Championship Racing Circuit! Drivers are preparing for the race.");
+                this.addCommentary("🏁 Welcome to the International Racing Championship! Drivers are warming up their engines.");
                 this.startRaceUpdates();
             }
             
@@ -560,16 +607,16 @@
                     position: i + 1,
                     previousPosition: i + 1,
                     lap: 0,
+                    lapProgress: 0,
                     lapTimes: [],
                     totalTime: 0,
                     finished: false,
                     finishTime: 0,
-                    raceSkill: Math.max(0.3, Math.min(0.95, team.skill + (Math.random() - 0.5) * 0.3)),
-                    currentSpeed: 0,
-                    incidents: [],
+                    raceSkill: Math.max(0.4, Math.min(0.95, team.skill + (Math.random() - 0.5) * 0.2)),
+                    currentPace: 1.0,
+                    momentum: 1.0,
                     personality: team.personality,
-                    racePace: 1.0,
-                    momentum: 1.0
+                    lastEventTime: 0
                 }));
             }
             
@@ -603,7 +650,7 @@
                     teamCard.innerHTML = `
                         <div class="team-name" style="color: ${team.color}">${team.name}</div>
                         <div class="team-story">${team.team_description}</div>
-                        <div style="font-size: 10px; color: #999; margin: 3px 0;">Driver: ${team.driver} | Car: ${team.car}</div>
+                        <div style="font-size: 10px; color: #999; margin: 3px 0;">🏎️ ${team.driver} (${team.nationality}) | ${team.car}</div>
                         <div class="team-odds">Odds: ${team.odds} | Skill: ${Math.round(team.skill * 100)}%</div>
                     `;
                     
@@ -657,7 +704,7 @@
                     🎯 Bet: $${betAmount} on <span style="color: ${this.selectedTeam.color}">${this.selectedTeam.name}</span>
                 `;
                 
-                this.addCommentary(`💰 ${this.selectedTeam.name} receives crowd support with a $${betAmount} bet!`);
+                this.addCommentary(`💰 ${this.selectedTeam.name} gets crowd support with a $${betAmount} bet from the stands!`);
                 this.updateBetButton();
             }
             
@@ -668,18 +715,20 @@
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                         <div><strong>Driver:</strong> ${team.driver}</div>
+                        <div><strong>Nationality:</strong> ${team.nationality}</div>
                         <div><strong>Car:</strong> ${team.car}</div>
-                        <div><strong>Genre:</strong> ${team.genre}</div>
-                        <div><strong>Racing Style:</strong> ${team.racing_style}</div>
+                        <div><strong>Sponsor:</strong> ${team.sponsor}</div>
+                        <div><strong>Background:</strong> ${team.background}</div>
+                        <div><strong>Championships:</strong> ${team.championships}</div>
                     </div>
                     
-                    <h3>Team Background</h3>
-                    <p style="margin-bottom: 15px;">${team.team_description}</p>
-                    
-                    <h3>Driver Story</h3>
+                    <h3>Team Story</h3>
                     <p style="margin-bottom: 15px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border-left: 4px solid ${team.color};">
                         ${team.story}
                     </p>
+                    
+                    <h3>Racing Style</h3>
+                    <p style="margin-bottom: 10px;">${team.racing_style}</p>
                     
                     <h3>Signature Move</h3>
                     <p style="font-style: italic; color: ${team.color};">${team.signature_move}</p>
@@ -692,72 +741,114 @@
                 this.gameState = 'racing';
                 this.startTime = Date.now();
                 this.currentLap = 1;
+                this.raceProgress = 0;
                 document.getElementById('raceStatus').textContent = 'Racing!';
                 
                 this.setupDrivers();
-                this.updateRaceNarrative("🚥 GREEN FLAG! The race is underway! All drivers launch from the starting grid as the championship battle begins!");
-                this.addCommentary("🏁 AND THEY'RE OFF! The drivers surge forward as the green flag waves!");
+                this.updateRaceNarrative("🚦 LIGHTS OUT AND AWAY WE GO! The field charges into turn 1 as the 20-lap sprint race begins!");
+                this.addCommentary("🏁 GREEN FLAG! All drivers are racing hard into the first corner!");
                 
-                // Start the race simulation
-                this.raceSimulationInterval = setInterval(() => this.simulateRaceProgress(), 2000);
+                // Fast-paced race simulation for 5-minute duration
+                this.raceSimulationInterval = setInterval(() => this.simulateRaceProgress(), 800); // Every 0.8 seconds
+                
+                // End race after exactly 5 minutes
+                this.raceTimeoutInterval = setTimeout(() => {
+                    if (this.gameState === 'racing') {
+                        this.forceRaceEnd();
+                    }
+                }, this.totalRaceDuration);
             }
             
             simulateRaceProgress() {
                 if (this.gameState !== 'racing') return;
                 
+                const elapsed = Date.now() - this.startTime;
+                this.raceProgress = Math.min(100, (elapsed / this.totalRaceDuration) * 100);
+                
+                // Update progress bar
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = `${this.raceProgress}%`;
+                progressFill.textContent = `${Math.round(this.raceProgress)}% Complete`;
+                
+                // Calculate current lap based on progress
+                const newLap = Math.floor((this.raceProgress / 100) * this.totalLaps) + 1;
+                if (newLap > this.currentLap && newLap <= this.totalLaps) {
+                    this.currentLap = newLap;
+                    this.addCommentary(`🏁 Lap ${this.currentLap} of ${this.totalLaps} - The field is heating up!`);
+                    
+                    if (this.currentLap === 10) {
+                        this.updateRaceNarrative("🔄 HALFWAY POINT! We're at the midpoint of this thrilling 20-lap sprint race. Positions are constantly changing as drivers push their cars to the limit!");
+                    } else if (this.currentLap === 18) {
+                        this.updateRaceNarrative("🔥 FINAL LAPS! Just 3 laps to go! The championship battle is reaching its crescendo as drivers give everything they have!");
+                    }
+                }
+                
                 // Simulate each driver's progress
                 this.drivers.forEach(driver => {
                     if (driver.finished) return;
                     
-                    // Apply personality and skill effects
+                    // Apply personality-based pace
                     let paceModifier = this.calculatePaceModifier(driver);
                     
+                    // Update driver progress
+                    driver.lapProgress += 0.8 * driver.raceSkill * paceModifier * (0.8 + Math.random() * 0.4);
+                    
                     // Random race events
-                    if (Math.random() < 0.15) {
+                    if (Math.random() < 0.12 && Date.now() - driver.lastEventTime > 5000) {
                         this.generateRaceEvent(driver);
+                        driver.lastEventTime = Date.now();
                     }
                     
-                    // Update driver progress
-                    driver.racePace = Math.max(0.5, Math.min(1.5, driver.racePace + (Math.random() - 0.5) * 0.2));
-                    
-                    // Check for lap completion
-                    if (Math.random() < 0.3 * driver.raceSkill * paceModifier) {
-                        this.completeLap(driver);
+                    // Check for lap completion based on race progress
+                    if (this.raceProgress > 95 && !driver.finished) {
+                        driver.finished = true;
+                        driver.finishTime = Date.now() - this.startTime;
+                        driver.lap = this.totalLaps;
+                        this.addCommentary(`🏆 ${driver.team.name} crosses the finish line!`);
+                        
+                        if (this.drivers.filter(d => d.finished).length === 1) {
+                            this.updateRaceNarrative(`🥇 CHECKERED FLAG! ${driver.team.name} takes victory in a spectacular finish! What an incredible race!`);
+                        }
                     }
                 });
                 
                 this.updatePositions();
                 this.generateRaceCommentary();
-                this.checkRaceComplete();
+                
+                // Check if race should end
+                if (this.raceProgress >= 100) {
+                    this.forceRaceEnd();
+                }
             }
             
             calculatePaceModifier(driver) {
                 let modifier = 1.0;
+                const racePhase = this.raceProgress / 100;
                 
                 switch (driver.personality) {
                     case "aggressive":
-                        modifier = 1.0 + Math.random() * 0.15;
+                        modifier = 1.0 + Math.random() * 0.12;
                         break;
                     case "technical":
-                        modifier = 1.05;
+                        modifier = 1.06 + (racePhase * 0.05); // Gets better as race progresses
                         break;
                     case "steady":
-                        modifier = 1.0;
+                        modifier = 1.02;
                         break;
                     case "underdog":
-                        modifier = 0.9 + (driver.lap * 0.05); // Gets stronger
+                        modifier = 0.95 + (racePhase * 0.15); // Strong finish
                         break;
                     case "mystical":
-                        modifier = 0.95 + Math.sin(Date.now() * 0.001) * 0.15;
+                        modifier = 1.0 + Math.sin(Date.now() * 0.001) * 0.08;
                         break;
                     case "smooth":
-                        modifier = 1.08;
+                        modifier = 1.04 + (Math.random() * 0.04);
                         break;
                     case "risky":
-                        modifier = 1.1 + Math.random() * 0.2 - 0.1;
+                        modifier = 1.08 + Math.random() * 0.15 - 0.075;
                         break;
                     case "erratic":
-                        modifier = 0.8 + Math.random() * 0.4;
+                        modifier = 0.85 + Math.random() * 0.3;
                         break;
                 }
                 
@@ -766,54 +857,25 @@
             
             generateRaceEvent(driver) {
                 const event = raceEvents[Math.floor(Math.random() * raceEvents.length)];
-                const impact = Math.random() > 0.5 ? 0.1 : -0.1;
+                const impact = Math.random() > 0.5 ? 0.08 : -0.08;
                 
                 driver.momentum += impact;
-                driver.momentum = Math.max(0.5, Math.min(1.5, driver.momentum));
+                driver.momentum = Math.max(0.7, Math.min(1.3, driver.momentum));
                 
-                if (Math.random() < 0.3) {
-                    this.addCommentary(`🏎️ ${driver.team.name} ${event}!`);
-                }
-            }
-            
-            completeLap(driver) {
-                driver.lap++;
-                const lapTime = 95 + Math.random() * 10 + (1 - driver.raceSkill) * 15;
-                driver.lapTimes.push(lapTime);
-                driver.totalTime += lapTime;
-                
-                if (driver.lap === 1) {
-                    this.addCommentary(`🏁 ${driver.team.name} completes their first lap in ${lapTime.toFixed(2)}s!`);
-                } else {
-                    this.addCommentary(`📊 ${driver.team.name} - Lap ${driver.lap}: ${lapTime.toFixed(2)}s`);
-                }
-                
-                if (driver.lap >= this.raceDistance && !driver.finished) {
-                    driver.finished = true;
-                    driver.finishTime = Date.now() - this.startTime;
-                    this.addCommentary(`🏆 ${driver.team.name} crosses the finish line!`);
-                    
-                    if (this.drivers.filter(d => d.finished).length === 1) {
-                        this.updateRaceNarrative(`🥇 CHECKERED FLAG! ${driver.team.name} takes the victory in a commanding performance! What a race!`);
-                    }
-                }
-                
-                // Update lap display
-                if (driver.lap > this.currentLap && driver.lap <= this.raceDistance) {
-                    this.currentLap = driver.lap;
-                    this.updateRaceNarrative(`🔄 LAP ${this.currentLap} - The field spreads out as drivers settle into their racing rhythm. Position battles are heating up throughout the pack!`);
-                }
+                this.addCommentary(`🏎️ ${driver.team.driver} ${event}!`);
             }
             
             updatePositions() {
-                // Sort drivers by race progress
+                // Sort drivers by race progress and skill
                 this.drivers.sort((a, b) => {
                     if (a.finished && !b.finished) return -1;
                     if (!a.finished && b.finished) return 1;
                     if (a.finished && b.finished) return a.finishTime - b.finishTime;
                     
-                    if (a.lap !== b.lap) return b.lap - a.lap;
-                    return a.totalTime - b.totalTime;
+                    // Sort by progress and skill combination
+                    const aScore = a.lapProgress * a.raceSkill * a.momentum;
+                    const bScore = b.lapProgress * b.raceSkill * b.momentum;
+                    return bScore - aScore;
                 });
                 
                 // Update positions and track changes
@@ -834,22 +896,33 @@
                 });
                 
                 this.updateLeaderboardDisplay();
+                this.updateProgressText();
+            }
+            
+            updateProgressText() {
+                const progressText = document.getElementById('progressText');
+                const leader = this.drivers[0];
+                const timeRemaining = Math.max(0, this.totalRaceDuration - (Date.now() - this.startTime));
+                const minutesLeft = Math.floor(timeRemaining / 60000);
+                const secondsLeft = Math.floor((timeRemaining % 60000) / 1000);
+                
+                progressText.textContent = `Leader: ${leader.team.name} | Time Remaining: ${minutesLeft}:${secondsLeft.toString().padStart(2, '0')}`;
             }
             
             generateRaceCommentary() {
-                if (Math.random() < 0.4) {
+                if (Math.random() < 0.3) {
                     const randomDriver = this.drivers[Math.floor(Math.random() * this.drivers.length)];
                     const events = [
-                        `🎯 ${randomDriver.team.name} is showing great pace in the middle sector`,
-                        `⚡ ${randomDriver.team.name} sets the fastest mini-sector time`,
-                        `🔥 ${randomDriver.team.name} is really pushing their car to the limit`,
-                        `💨 ${randomDriver.team.name} finds extra speed on the main straight`,
-                        `🎢 ${randomDriver.team.name} navigates the technical section beautifully`,
-                        `⚖️ ${randomDriver.team.name} manages their tires expertly`,
-                        `🎪 ${randomDriver.team.name} puts on a masterclass in racecraft`
+                        `🎯 ${randomDriver.team.name} showing excellent pace through the technical section`,
+                        `⚡ ${randomDriver.team.driver} posts the fastest sector time of the race so far`,
+                        `🔥 ${randomDriver.team.name} is really pushing hard in these final stages`,
+                        `💨 ${randomDriver.team.name} gains valuable time on the main straight`,
+                        `🎢 Beautiful driving from ${randomDriver.team.driver} through the chicane`,
+                        `⚖️ ${randomDriver.team.name} managing their tires perfectly`,
+                        `🎪 Masterful racecraft being displayed by ${randomDriver.team.driver}`
                     ];
                     
-                    if (!randomDriver.finished) {
+                    if (!randomDriver.finished && Math.random() < 0.6) {
                         this.addCommentary(events[Math.floor(Math.random() * events.length)]);
                     }
                 }
@@ -858,7 +931,7 @@
             updateLeaderboardDisplay() {
                 const positionsDiv = document.getElementById('positions');
                 positionsDiv.innerHTML = this.drivers.map((driver, index) => {
-                    const status = driver.finished ? 'FINISHED' : `Lap ${driver.lap}/${this.raceDistance}`;
+                    const status = driver.finished ? 'FINISHED' : `Lap ${Math.min(this.currentLap, this.totalLaps)}`;
                     
                     let changeIcon = '';
                     let changeClass = 'position-same';
@@ -883,21 +956,21 @@
             
             updateRaceNarrative(text) {
                 document.getElementById('raceNarrative').innerHTML = `
-                    <h4>📢 Race Control</h4>
+                    <h4>📢 Race Director</h4>
                     <p>${text}</p>
                 `;
             }
             
             addCommentary(text) {
                 const now = Date.now();
-                if (now - this.lastCommentaryTime < 800) return;
+                if (now - this.lastCommentaryTime < 600) return;
                 
                 this.commentary.push({
                     text: text,
                     time: now
                 });
                 
-                if (this.commentary.length > 15) {
+                if (this.commentary.length > 12) {
                     this.commentary.shift();
                 }
                 
@@ -913,14 +986,20 @@
                 feed.scrollTop = feed.scrollHeight;
             }
             
-            checkRaceComplete() {
-                const finishedDrivers = this.drivers.filter(driver => driver.finished);
-                if (finishedDrivers.length === this.drivers.length || 
-                   (finishedDrivers.length > 0 && Date.now() - this.startTime > 120000)) {
-                    this.gameState = 'finished';
-                    clearInterval(this.raceSimulationInterval);
-                    this.showRaceResults();
-                }
+            forceRaceEnd() {
+                this.gameState = 'finished';
+                clearInterval(this.raceSimulationInterval);
+                clearTimeout(this.raceTimeoutInterval);
+                
+                // Mark all remaining drivers as finished
+                this.drivers.forEach(driver => {
+                    if (!driver.finished) {
+                        driver.finished = true;
+                        driver.finishTime = Date.now() - this.startTime;
+                    }
+                });
+                
+                this.showRaceResults();
             }
             
             showRaceResults() {
@@ -930,11 +1009,11 @@
                 
                 winnerAnnouncement.innerHTML = `
                     <h3 style="color: ${winner.team.color}">🏆 ${winner.team.name} WINS!</h3>
-                    <p><strong>Driver:</strong> ${winner.team.driver}</p>
-                    <p><strong>Race Time:</strong> ${this.formatTime(winner.finishTime || Date.now() - this.startTime)}</p>
+                    <p><strong>Driver:</strong> ${winner.team.driver} (${winner.team.nationality})</p>
+                    <p><strong>Race Time:</strong> ${this.formatTime(winner.finishTime)}</p>
                 `;
                 
-                this.addCommentary(`🏆 RACE COMPLETE! ${winner.team.name} takes the checkered flag in a spectacular victory!`);
+                this.addCommentary(`🏆 RACE COMPLETE! ${winner.team.name} takes the checkered flag in a brilliant victory!`);
                 
                 let payoutText = '';
                 if (this.currentBet && this.currentBet.team.id === winner.id) {
@@ -981,6 +1060,9 @@
             document.getElementById('raceStatus').textContent = 'Betting Open';
             document.getElementById('currentBet').innerHTML = '';
             document.getElementById('timer').textContent = '0:00';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressFill').textContent = '0% Complete';
+            document.getElementById('progressText').textContent = 'Race will begin shortly - Place your bets!';
             
             document.querySelectorAll('.team-card').forEach(card => {
                 card.classList.remove('selected');
@@ -988,8 +1070,8 @@
             
             game.setupDrivers();
             game.updateTeamsList();
-            game.updateRaceNarrative("🏁 NEW RACE STARTING! Drivers are taking their positions on the grid. Place your bets for the next thrilling race!");
-            game.addCommentary(`🎪 Race ${game.raceNumber} is about to begin! Who will claim victory this time?`);
+            game.updateRaceNarrative(`🏁 RACE ${game.raceNumber} STARTING! Fresh cars, new strategies, and championship points on the line. The drivers are ready for another 5-minute sprint race!`);
+            game.addCommentary(`🎪 Race ${game.raceNumber} is about to begin! Who will claim victory in this championship battle?`);
         }
 
         function closeStory() {
@@ -997,7 +1079,7 @@
         }
 
         // Initialize the game
-        const game = new TextRacingGame();
+        const game = new RealisticRacingGame();
     </script>
 </body>
 </html>
